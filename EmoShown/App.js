@@ -1,0 +1,22 @@
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import { CreateAccountScreen } from './JS/CreateAccountScreen';
+import { LoginScreen } from './JS/LoginScreen';
+import { HomeScreen } from './JS/HomeScreen';
+import { MoodJournalScreen } from './JS/MoodJournalScreen'; // Keep this if you still use the MoodJournalScreen
+
+const Stack = createStackNavigator();
+
+export default function App() {
+  return (
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName="CreateAccount">
+        <Stack.Screen name="CreateAccount" component={CreateAccountScreen} />
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="MoodJournal" component={MoodJournalScreen} />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
