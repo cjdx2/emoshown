@@ -42,7 +42,7 @@ export function CreateAccountScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Create Account</Text>
+      <Text style={styles.title}>Create{"\n"}Account</Text>
       
       <TextInput
         style={styles.input}
@@ -93,8 +93,9 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
+    marginBottom: 100,
+    textAlign: 'left',
+    marginTop: -100,
   },
   input: {
     height: 50,
@@ -102,7 +103,7 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     borderRadius: 5,
     padding: 10,
-    marginBottom: 10,
+    marginBottom: 5,
     fontSize: 16,
   },
   button: {
