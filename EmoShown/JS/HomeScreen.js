@@ -128,12 +128,12 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: '#fff',
     borderRadius: 5,
-    justifyContent: 'center', // Center the content
-    alignItems: 'center', // Center the content
+    justifyContent: 'center', 
+    alignItems: 'center', 
   },
   menuButtonImage: {
-    width: 24, // Adjust as needed
-    height: 24, // Adjust as needed
+    width: 24,
+    height: 24, 
   },
   bottomNav: {
     position: 'absolute',

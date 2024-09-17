@@ -1,8 +1,7 @@
-// MoodJournalScreen.js
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, TextInput, StyleSheet, Modal, Pressable, Image } from 'react-native';
-import { signOut } from 'firebase/auth'; // Import signOut function
-import { auth, storage } from './firebaseConfig'; // Import Firebase configurations
+import { signOut } from 'firebase/auth'; 
+import { auth, storage } from './firebaseConfig'; 
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -11,6 +10,7 @@ export function MoodJournalScreen({ navigation }) {
   const [journalEntry, setJournalEntry] = useState('');
   const [currentDate, setCurrentDate] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
+  const [emotionModalVisible, setEmotionModalVisible] = useState(false);  // New state for emotion modal
   const [imageUri, setImageUri] = useState(null);
 
   useEffect(() => {
@@ -71,8 +71,8 @@ export function MoodJournalScreen({ navigation }) {
 
   const handleLogout = async () => {
     try {
-      await signOut(auth); // Log out the user
-      navigation.navigate('Login'); // Navigate to the login or home screen after logout
+      await signOut(auth);
+      navigation.navigate('Login');
     } catch (error) {
       console.error('Logout Error:', error);
     }
@@ -83,8 +83,8 @@ export function MoodJournalScreen({ navigation }) {
       headerLeft: () => null,
       headerRight: () => (
         <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.menuButton}>
-        <Image source={require('../assets/menu.png')} style={styles.menuButtonImage} />
-      </TouchableOpacity>
+          <Image source={require('../assets/menu.png')} style={styles.menuButtonImage} />
+        </TouchableOpacity>
       ),
     });
   }, [navigation]);
@@ -95,17 +95,17 @@ export function MoodJournalScreen({ navigation }) {
       <Text style={styles.title}>How are you feeling today?</Text>
 
       <View style={styles.moodOptions}>
-        <TouchableOpacity onPress={() => setMood('Positive')} style={[styles.moodButton, mood === 'Positive' && styles.selectedMood]}>
-          <Text style={styles.moodText}>😊 Positive</Text>
+        <TouchableOpacity onPress={() => setEmotionModalVisible(true)} style={[styles.moodButton, mood === 'Positive' && styles.selectedMood]}>
+          <Image source={require('../assets/positive/happiness.png')} style={styles.moodIcon} />
+          <Text style={styles.moodText}>Positive</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => setMood('Neutral')} style={[styles.moodButton, mood === 'Neutral' && styles.selectedMood]}>
-          <Text style={styles.moodText}>😐 Neutral</Text>
+          <Image source={require('../assets/neutral/boredom.png')} style={styles.moodIcon} />
+          <Text style={styles.moodText}>Neutral</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => setMood('Negative')} style={[styles.moodButton, mood === 'Negative' && styles.selectedMood]}>
-          <Text style={styles.moodText}>😞 Negative</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => setMood('Specific')} style={[styles.moodButton, mood === 'Specific' && styles.selectedMood]}>
-          <Text style={styles.moodText}>🤔 Specific</Text>
+          <Image source={require('../assets/negative/sadness.png')} style={styles.moodIcon} />
+          <Text style={styles.moodText}>Negative</Text>
         </TouchableOpacity>
       </View>
 
@@ -126,9 +126,9 @@ export function MoodJournalScreen({ navigation }) {
         <Image source={{ uri: imageUri }} style={styles.image} />
       )}
 
-  <TouchableOpacity style={styles.nextButton} onPress={() => alert('Questionnaire')}>
-          <Image source={require('../assets/rightarrow.png')} style={styles.icon} />
-        </TouchableOpacity>
+      <TouchableOpacity style={styles.nextButton} onPress={() => alert('Questionnaire')}>
+        <Image source={require('../assets/rightarrow.png')} style={styles.icon} />
+      </TouchableOpacity>
 
       <View style={styles.bottomNav}>
         <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('MoodJournal')}>
@@ -148,27 +148,97 @@ export function MoodJournalScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
+      {/* Emotion Modal */}
       <Modal
-  animationType="slide"
-  transparent={true}
-  visible={modalVisible}
-  onRequestClose={() => setModalVisible(false)}>
-  <View style={styles.modalContainer}>
-    <View style={styles.modalContent}>
-      <Pressable onPress={handleLogout} style={styles.logoutButton}>
-        <Text style={styles.logoutButtonText}>Logout</Text>
-      </Pressable>
-      <Pressable onPress={() => setModalVisible(false)} style={styles.closeButton}>
-        <Text style={styles.closeButtonText}>Close</Text>
-      </Pressable>
-    </View>
-  </View>
-</Modal>
+        animationType="slide"
+        transparent={true}
+        visible={emotionModalVisible}
+        onRequestClose={() => setEmotionModalVisible(false)}
+      >
+        <View style={styles.emotionModalContainer}>
+          <View style={styles.emotionModalContent}>
+            <Text style={styles.modalTitle}>I feel</Text>
+            <View style={styles.emotionOptions}>
+              <TouchableOpacity onPress={() => alert('You feel happy')}>
+                <Text style={styles.emotionText}>😊 Happy</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => alert('You feel excited')}>
+                <Text style={styles.emotionText}>🤩 Excited</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => alert('You feel grateful')}>
+                <Text style={styles.emotionText}>🙏 Grateful</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => alert('You feel calm')}>
+                <Text style={styles.emotionText}>😌 Calm</Text>
+              </TouchableOpacity>
+            </View>
+            <Pressable onPress={() => setEmotionModalVisible(false)} style={styles.closeButton}>
+              <Text style={styles.closeButtonText}>Close</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Pressable onPress={handleLogout} style={styles.logoutButton}>
+              <Text style={styles.logoutButtonText}>Logout</Text>
+            </Pressable>
+            <Pressable onPress={() => setModalVisible(false)} style={styles.closeButton}>
+              <Text style={styles.closeButtonText}>Close</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  // Add your existing styles here...
+
+  emotionModalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  emotionModalContent: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 10,
+    width: '80%',
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  emotionOptions: {
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
+  emotionText: {
+    fontSize: 18,
+    marginVertical: 10,
+  },
+  closeButton: {
+    marginTop: 20,
+    padding: 10,
+    backgroundColor: '#1E90FF',
+    borderRadius: 5,
+  },
+  closeButtonText: {
+    fontSize: 16,
+    color: '#fff',
+  },
+
   container: {
     flex: 1,
     padding: 20,
@@ -196,6 +266,7 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: '#ccc',
     borderRadius: 5,
+    alignItems: 'center', // Center text and icon
   },
   selectedMood: {
     backgroundColor: '#1E90FF',
@@ -203,9 +274,14 @@ const styles = StyleSheet.create({
   moodText: {
     fontSize: 16,
     color: '#fff',
+    marginTop: 5, // Add space between the icon and text
+  },
+  moodIcon: {
+    width: 40,
+    height: 40,
   },
   journalContainer: {
-    flexDirection: 'column', // Changed to column
+    flexDirection: 'column',
     alignItems: 'flex-start',
     borderColor: '#ccc',
     borderWidth: 1,
@@ -238,14 +314,14 @@ const styles = StyleSheet.create({
   nextButton: {
     marginTop: 10,
     padding: 10,
-    backgroundColor: '#fff', // Black background
+    backgroundColor: '#fff',
     borderRadius: 5,
     alignSelf: 'flex-end',
     justifyContent: 'center',
     alignItems: 'center',
   },
   nextButtonText: {
-    color: '#fff', // White text color
+    color: '#fff',
     fontSize: 16,
   },
   bottomNav: {
@@ -272,12 +348,12 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: '#fff',
     borderRadius: 5,
-    justifyContent: 'center', // Center the content
-    alignItems: 'center', // Center the content
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   menuButtonImage: {
-    width: 24, // Adjust as needed
-    height: 24, // Adjust as needed
+    width: 24,
+    height: 24,
   },
   modalContainer: {
     flex: 1,
@@ -291,13 +367,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     width: '80%',
     alignItems: 'center',
-  },
-  navButton: {
-    padding: 10,
-  },
-  navButtonText: {
-    fontSize: 16,
-    color: '#000',
   },
   logoutButton: {
     marginTop: 10,
@@ -320,4 +389,3 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
 });
-
