@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, Pressable } from 'react-native';
-import { signOut } from 'firebase/auth';  // Import Firebase sign out
-import { auth } from './firebaseConfig'; // Import auth from Firebase config
+import { View, Text, TouchableOpacity, StyleSheet, Modal, Pressable, Image } from 'react-native';
+import { signOut } from 'firebase/auth';  
+import { auth } from './firebaseConfig'; 
 
 export function HomeScreen({ navigation }) {
-  const username = "Username"; // Replace with dynamic username logic if necessary
+  const username = "Username"; 
   const [currentDate, setCurrentDate] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
 
-  // Function to handle logging out
   const handleLogout = () => {
     signOut(auth)
       .then(() => {
@@ -19,7 +18,6 @@ export function HomeScreen({ navigation }) {
       });
   };
 
-  // Get the current date dynamically
   useEffect(() => {
     const updateDate = () => {
       const date = new Date();
@@ -37,14 +35,13 @@ export function HomeScreen({ navigation }) {
     return () => clearInterval(intervalId);
   }, []);
 
-  // Set up navigation options for the menu button
   useEffect(() => {
     navigation.setOptions({
-      headerLeft: () => null, // Remove back button
+      headerLeft: () => null, 
       headerRight: () => (
         <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.menuButton}>
-          <Text style={styles.menuButtonText}>Menu</Text>
-        </TouchableOpacity>
+        <Image source={require('../assets/menu.png')} style={styles.menuButtonImage} />
+      </TouchableOpacity>
       ),
     });
   }, [navigation]);
@@ -58,15 +55,26 @@ export function HomeScreen({ navigation }) {
           "When I talk to myself as I would a friend, I see all my best qualities and I allow myself to shine."
         </Text>
       </View>
-      <View style={styles.navButtons}>
-        <TouchableOpacity
-          style={styles.iconButton}
-          onPress={() => navigation.navigate('MoodJournal')}>
-          <Text style={styles.iconText}>Go to Journal</Text>
+
+      {/* Bottom Navigation Icons */}
+      <View style={styles.bottomNav}>
+        <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('MoodJournal')}>
+          <Image source={require('../assets/dailymood.png')} style={styles.icon} />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('MoodJournal')}>
+          <Image source={require('../assets/analysis.png')} style={styles.icon} />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Home')}>
+          <Image source={require('../assets/home.png')} style={styles.icon} />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.iconButton} onPress={() => alert('Mood Tracking')}>
+          <Image source={require('../assets/recommend.png')} style={styles.icon} />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.iconButton} onPress={() => alert('Settings')}>
+          <Image source={require('../assets/community.png')} style={styles.icon} />
         </TouchableOpacity>
       </View>
 
-      {/* Menu Modal */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -74,14 +82,11 @@ export function HomeScreen({ navigation }) {
         onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Pressable onPress={() => navigation.navigate('MoodJournal')} style={styles.navButton}>
-              <Text style={styles.navButtonText}>Go to Journal</Text>
+            <Pressable onPress={handleLogout} style={styles.modalButton}>
+              <Text style={styles.modalButtonText}>Logout</Text>
             </Pressable>
-            <Pressable onPress={handleLogout} style={styles.logoutButton}>
-              <Text style={styles.logoutButtonText}>Logout</Text>
-            </Pressable>
-            <Pressable onPress={() => setModalVisible(false)} style={styles.closeButton}>
-              <Text style={styles.closeButtonText}>Close</Text>
+            <Pressable onPress={() => setModalVisible(false)} style={styles.modalButton}>
+              <Text style={styles.modalButtonText}>Close</Text>
             </Pressable>
           </View>
         </View>
@@ -118,29 +123,36 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     textAlign: 'center',
   },
-  navButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-  },
-  iconButton: {
-    padding: 10,
-    backgroundColor: '#1E90FF',
-    borderRadius: 5,
-  },
-  iconText: {
-    color: '#fff',
-    fontSize: 16,
-  },
   menuButton: {
     marginRight: 10,
     padding: 10,
-    backgroundColor: '#1E90FF',
+    backgroundColor: '#fff',
     borderRadius: 5,
+    justifyContent: 'center', // Center the content
+    alignItems: 'center', // Center the content
   },
-  menuButtonText: {
-    color: '#fff',
-    fontSize: 16,
+  menuButtonImage: {
+    width: 24, // Adjust as needed
+    height: 24, // Adjust as needed
+  },
+  bottomNav: {
+    position: 'absolute',
+    bottom: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    padding: 10,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderColor: '#ddd',
+  },
+  iconButton: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  icon: {
+    width: 30,
+    height: 30, // Adjust this size depending on your icon size
   },
   modalContainer: {
     flex: 1,
@@ -155,32 +167,14 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
   },
-  navButton: {
+  modalButton: {
     padding: 10,
     backgroundColor: '#1E90FF',
     borderRadius: 5,
     marginBottom: 10,
   },
-  navButtonText: {
+  modalButtonText: {
     color: '#fff',
-    fontSize: 16,
-  },
-  logoutButton: {
-    padding: 10,
-    backgroundColor: '#1E90FF',
-    borderRadius: 5,
-    marginBottom: 10,
-  },
-  logoutButtonText: {
-    color: '#fff',
-    fontSize: 16,
-  },
-  closeButton: {
-    padding: 10,
-    backgroundColor: '#ccc',
-    borderRadius: 5,
-  },
-  closeButtonText: {
     fontSize: 16,
   },
 });
