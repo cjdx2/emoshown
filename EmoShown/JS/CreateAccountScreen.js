@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, firestore } from './firebaseConfig'; // Import Firebase auth and Firestore
 import { setDoc, doc } from 'firebase/firestore'; // Firestore functions
@@ -73,7 +73,7 @@ export function CreateAccountScreen({ navigation }) {
       />
       
       <TouchableOpacity style={styles.button} onPress={handleSignUp}>
-        <Text style={styles.buttonText}>Sign Up</Text>
+        <Image source={require('../assets/rightarrow.png')} style={styles.icon} />
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => navigation.navigate('Login')}>
@@ -91,35 +91,43 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   title: {
+    color: '#333333',
     fontSize: 32,
     fontWeight: 'bold',
-    marginBottom: 100,
+    marginBottom: 80,
     textAlign: 'left',
-    marginTop: -100,
+    marginTop: -50,
   },
   input: {
+    color: '#333333',
     height: 50,
-    borderWidth: 1,
-    borderColor: '#ccc',
     borderRadius: 5,
+    borderWidth: 1,
+    borderColor: '#333333',
     padding: 10,
     marginBottom: 5,
     fontSize: 16,
   },
   button: {
-    backgroundColor: '#000',
+    backgroundColor: 'transparent',
+    width: 50,
     height: 50,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 5,
+    borderWidth: 1,
+    borderColor: '#333333',
     marginBottom: 20,
+    marginTop: 50,
+    left: 270,
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 18,
+  icon: {
+    width: 24,
+    height: 24,  
   },
   link: {
     color: '#1E90FF',
     textAlign: 'center',
+    marginTop: 50,
   },
 });
