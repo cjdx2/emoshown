@@ -10,8 +10,9 @@ export function MoodJournalScreen({ navigation }) {
   const [journalEntry, setJournalEntry] = useState('');
   const [currentDate, setCurrentDate] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
-  const [emotionModalVisible, setEmotionModalVisible] = useState(false);  // New state for emotion modal
+  const [emotionModalVisible, setEmotionModalVisible] = useState(false);
   const [imageUri, setImageUri] = useState(null);
+  const [selectedEmotion, setSelectedEmotion] = useState('');
 
   useEffect(() => {
     const updateDate = () => {
@@ -89,6 +90,11 @@ export function MoodJournalScreen({ navigation }) {
     });
   }, [navigation]);
 
+  const handleEmotionSelect = (emotion) => {
+    setSelectedEmotion(emotion);
+    setEmotionModalVisible(false);
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.date}>{currentDate}</Text>
@@ -157,19 +163,23 @@ export function MoodJournalScreen({ navigation }) {
       >
         <View style={styles.emotionModalContainer}>
           <View style={styles.emotionModalContent}>
-            <Text style={styles.modalTitle}>I feel</Text>
-            <View style={styles.emotionOptions}>
-              <TouchableOpacity onPress={() => alert('You feel happy')}>
-                <Text style={styles.emotionText}>😊 Happy</Text>
+          <Text style={styles.modalTitle}>{selectedEmotion ? `I feel ${selectedEmotion}` : 'I feel'}</Text>
+          <View style={styles.emotionOptions}>
+              <TouchableOpacity onPress={() => handleEmotionSelect('happy')}>
+                <Image source={require('../assets/positive/happiness.png')} style={styles.emotionIcon} />
+                <Text style={styles.emotionText}>Happy</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => alert('You feel excited')}>
-                <Text style={styles.emotionText}>🤩 Excited</Text>
+              <TouchableOpacity onPress={() => handleEmotionSelect('excited')}>
+                <Image source={require('../assets/positive/excitement.png')} style={styles.emotionIcon} />
+                <Text style={styles.emotionText}>Excited</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => alert('You feel grateful')}>
-                <Text style={styles.emotionText}>🙏 Grateful</Text>
+              <TouchableOpacity onPress={() => handleEmotionSelect('grateful')}>
+                <Image source={require('../assets/positive/gratitude.png')} style={styles.emotionIcon} />
+                <Text style={styles.emotionText}>Grateful</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => alert('You feel calm')}>
-                <Text style={styles.emotionText}>😌 Calm</Text>
+              <TouchableOpacity onPress={() => handleEmotionSelect('calm')}>
+                <Image source={require('../assets/positive/calm.png')} style={styles.emotionIcon} />
+                <Text style={styles.emotionText}>Calm</Text>
               </TouchableOpacity>
             </View>
             <Pressable onPress={() => setEmotionModalVisible(false)} style={styles.closeButton}>
@@ -200,7 +210,6 @@ export function MoodJournalScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  // Add your existing styles here...
 
   emotionModalContainer: {
     flex: 1,
@@ -216,17 +225,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalTitle: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 20,
   },
   emotionOptions: {
-    flexDirection: 'column',
-    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    marginBottom: 20,
+  },
+  emotionIcon: {
+    width: 50,
+    height: 50,
   },
   emotionText: {
-    fontSize: 18,
-    marginVertical: 10,
+    textAlign: 'center',
   },
   closeButton: {
     marginTop: 20,
@@ -266,7 +280,7 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: '#ccc',
     borderRadius: 5,
-    alignItems: 'center', // Center text and icon
+    alignItems: 'center',
   },
   selectedMood: {
     backgroundColor: '#1E90FF',
@@ -274,7 +288,7 @@ const styles = StyleSheet.create({
   moodText: {
     fontSize: 16,
     color: '#fff',
-    marginTop: 5, // Add space between the icon and text
+    marginTop: 5,
   },
   moodIcon: {
     width: 40,

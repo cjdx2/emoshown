@@ -94,9 +94,9 @@ const styles = StyleSheet.create({
     color: '#333333',
     fontSize: 32,
     fontWeight: 'bold',
-    marginBottom: 80,
+    marginBottom: 100,
     textAlign: 'left',
-    marginTop: -50,
+    
   },
   input: {
     color: '#333333',
