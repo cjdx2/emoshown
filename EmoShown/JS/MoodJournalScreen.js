@@ -163,7 +163,10 @@ export function MoodJournalScreen({ navigation }) {
       >
         <View style={styles.emotionModalContainer}>
           <View style={styles.emotionModalContent}>
-          <Text style={styles.modalTitle}>{selectedEmotion ? `I feel ${selectedEmotion}` : 'I feel'}</Text>
+          <Text style={styles.modalTitle}>
+            I feel 
+            <Text style={styles.selectedEmotionText}> {selectedEmotion}</Text>
+          </Text>
           <View style={styles.emotionOptions}>
               <TouchableOpacity onPress={() => handleEmotionSelect('happy')}>
                 <Image source={require('../assets/positive/happiness.png')} style={styles.emotionIcon} />
@@ -226,8 +229,11 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
     marginBottom: 20,
+  },
+  selectedEmotionText: {
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   emotionOptions: {
     flexDirection: 'row',
