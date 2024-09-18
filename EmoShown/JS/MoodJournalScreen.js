@@ -11,6 +11,7 @@ export function MoodJournalScreen({ navigation }) {
   const [currentDate, setCurrentDate] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [emotionModalVisible, setEmotionModalVisible] = useState(false);
+  const [neutralModalVisible, setNeutralModalVisible] = useState(false);
   const [imageUri, setImageUri] = useState(null);
   const [selectedEmotion, setSelectedEmotion] = useState('');
 
@@ -93,6 +94,7 @@ export function MoodJournalScreen({ navigation }) {
   const handleEmotionSelect = (emotion) => {
     setSelectedEmotion(emotion);
     setEmotionModalVisible(false);
+    setNeutralModalVisible(false);
   };
 
   return (
@@ -105,7 +107,7 @@ export function MoodJournalScreen({ navigation }) {
           <Image source={require('../assets/positive/happiness.png')} style={styles.moodIcon} />
           <Text style={styles.moodText}>Positive</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => setMood('Neutral')} style={[styles.moodButton, mood === 'Neutral' && styles.selectedMood]}>
+        <TouchableOpacity onPress={() => setNeutralModalVisible(true)} style={[styles.moodButton, mood === 'Neutral' && styles.selectedMood]}>
           <Image source={require('../assets/neutral/boredom.png')} style={styles.moodIcon} />
           <Text style={styles.moodText}>Neutral</Text>
         </TouchableOpacity>
@@ -154,7 +156,7 @@ export function MoodJournalScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Emotion Modal */}
+      {/* Positive Modal */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -170,22 +172,60 @@ export function MoodJournalScreen({ navigation }) {
           <View style={styles.emotionOptions}>
               <TouchableOpacity onPress={() => handleEmotionSelect('happy')}>
                 <Image source={require('../assets/positive/happiness.png')} style={styles.emotionIcon} />
-                <Text style={styles.emotionText}>Happy</Text>
+                <Text style={styles.emotionText}>happy</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => handleEmotionSelect('excited')}>
                 <Image source={require('../assets/positive/excitement.png')} style={styles.emotionIcon} />
-                <Text style={styles.emotionText}>Excited</Text>
+                <Text style={styles.emotionText}>excited</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => handleEmotionSelect('grateful')}>
                 <Image source={require('../assets/positive/gratitude.png')} style={styles.emotionIcon} />
-                <Text style={styles.emotionText}>Grateful</Text>
+                <Text style={styles.emotionText}>grateful</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => handleEmotionSelect('calm')}>
                 <Image source={require('../assets/positive/calm.png')} style={styles.emotionIcon} />
-                <Text style={styles.emotionText}>Calm</Text>
+                <Text style={styles.emotionText}>calm</Text>
               </TouchableOpacity>
             </View>
             <Pressable onPress={() => setEmotionModalVisible(false)} style={styles.closeButton}>
+              <Text style={styles.closeButtonText}>Close</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Neutral Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={neutralModalVisible} // Trigger for Neutral modal visibility
+        onRequestClose={() => setNeutralModalVisible(false)} // Close Neutral modal
+      >
+        <View style={styles.emotionModalContainer}>
+          <View style={styles.emotionModalContent}>
+            <Text style={styles.modalTitle}>
+              I feel
+              <Text style={styles.selectedEmotionText}> {selectedEmotion}</Text>
+            </Text>
+            <View style={styles.emotionOptions}>
+              <TouchableOpacity onPress={() => handleEmotionSelect('bored')}>
+                <Image source={require('../assets/neutral/boredom.png')} style={styles.emotionIcon} />
+                <Text style={styles.emotionText}>bored</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => handleEmotionSelect('numb')}>
+                <Image source={require('../assets/neutral/numbness.png')} style={styles.emotionIcon} />
+                <Text style={styles.emotionText}>numb</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => handleEmotionSelect('confused')}>
+                <Image source={require('../assets/neutral/confusion.png')} style={styles.emotionIcon} />
+                <Text style={styles.emotionText}>confused</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => handleEmotionSelect('doubt')}>
+                <Image source={require('../assets/neutral/ambivalence.png')} style={styles.emotionIcon} />
+                <Text style={styles.emotionText}>doubt</Text>
+              </TouchableOpacity>
+            </View>
+            <Pressable onPress={() => setNeutralModalVisible(false)} style={styles.closeButton}>
               <Text style={styles.closeButtonText}>Close</Text>
             </Pressable>
           </View>
