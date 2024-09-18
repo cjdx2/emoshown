@@ -12,6 +12,7 @@ export function MoodJournalScreen({ navigation }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [emotionModalVisible, setEmotionModalVisible] = useState(false);
   const [neutralModalVisible, setNeutralModalVisible] = useState(false);
+  const [negativeModalVisible, setNegativeModalVisible] = useState(false);
   const [imageUri, setImageUri] = useState(null);
   const [selectedEmotion, setSelectedEmotion] = useState('');
 
@@ -95,6 +96,7 @@ export function MoodJournalScreen({ navigation }) {
     setSelectedEmotion(emotion);
     setEmotionModalVisible(false);
     setNeutralModalVisible(false);
+    setNegativeModalVisible(false);
   };
 
   return (
@@ -105,15 +107,15 @@ export function MoodJournalScreen({ navigation }) {
       <View style={styles.moodOptions}>
         <TouchableOpacity onPress={() => setEmotionModalVisible(true)} style={[styles.moodButton, mood === 'Positive' && styles.selectedMood]}>
           <Image source={require('../assets/positive/happiness.png')} style={styles.moodIcon} />
-          <Text style={styles.moodText}>Positive</Text>
+          <Text style={styles.moodText}>positive</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => setNeutralModalVisible(true)} style={[styles.moodButton, mood === 'Neutral' && styles.selectedMood]}>
           <Image source={require('../assets/neutral/boredom.png')} style={styles.moodIcon} />
-          <Text style={styles.moodText}>Neutral</Text>
+          <Text style={styles.moodText}>neutral</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => setMood('Negative')} style={[styles.moodButton, mood === 'Negative' && styles.selectedMood]}>
+        <TouchableOpacity onPress={() => setNegativeModalVisible(true)} style={[styles.moodButton, mood === 'Negative' && styles.selectedMood]}>
           <Image source={require('../assets/negative/sadness.png')} style={styles.moodIcon} />
-          <Text style={styles.moodText}>Negative</Text>
+          <Text style={styles.moodText}>negative</Text>
         </TouchableOpacity>
       </View>
 
@@ -198,8 +200,8 @@ export function MoodJournalScreen({ navigation }) {
       <Modal
         animationType="slide"
         transparent={true}
-        visible={neutralModalVisible} // Trigger for Neutral modal visibility
-        onRequestClose={() => setNeutralModalVisible(false)} // Close Neutral modal
+        visible={neutralModalVisible}
+        onRequestClose={() => setNeutralModalVisible(false)}
       >
         <View style={styles.emotionModalContainer}>
           <View style={styles.emotionModalContent}>
@@ -223,6 +225,44 @@ export function MoodJournalScreen({ navigation }) {
               <TouchableOpacity onPress={() => handleEmotionSelect('doubt')}>
                 <Image source={require('../assets/neutral/ambivalence.png')} style={styles.emotionIcon} />
                 <Text style={styles.emotionText}>doubt</Text>
+              </TouchableOpacity>
+            </View>
+            <Pressable onPress={() => setNeutralModalVisible(false)} style={styles.closeButton}>
+              <Text style={styles.closeButtonText}>Close</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Negative Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={negativeModalVisible}
+        onRequestClose={() => setNegativeModalVisible(false)}
+      >
+        <View style={styles.emotionModalContainer}>
+          <View style={styles.emotionModalContent}>
+            <Text style={styles.modalTitle}>
+              I feel
+              <Text style={styles.selectedEmotionText}> {selectedEmotion}</Text>
+            </Text>
+            <View style={styles.emotionOptions}>
+              <TouchableOpacity onPress={() => handleEmotionSelect('angry')}>
+                <Image source={require('../assets/negative/anger.png')} style={styles.emotionIcon} />
+                <Text style={styles.emotionText}>angry</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => handleEmotionSelect('lonely')}>
+                <Image source={require('../assets/negative/loneliness.png')} style={styles.emotionIcon} />
+                <Text style={styles.emotionText}>lonely</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => handleEmotionSelect('sad')}>
+                <Image source={require('../assets/negative/sadness.png')} style={styles.emotionIcon} />
+                <Text style={styles.emotionText}>sad</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => handleEmotionSelect('worried')}>
+                <Image source={require('../assets/negative/anxiety.png')} style={styles.emotionIcon} />
+                <Text style={styles.emotionText}>worried</Text>
               </TouchableOpacity>
             </View>
             <Pressable onPress={() => setNeutralModalVisible(false)} style={styles.closeButton}>
