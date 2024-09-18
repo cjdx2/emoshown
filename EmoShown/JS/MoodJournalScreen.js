@@ -265,7 +265,7 @@ export function MoodJournalScreen({ navigation }) {
                 <Text style={styles.emotionText}>worried</Text>
               </TouchableOpacity>
             </View>
-            <Pressable onPress={() => setNeutralModalVisible(false)} style={styles.closeButton}>
+            <Pressable onPress={() => setNegativeModalVisible(false)} style={styles.closeButton}>
               <Text style={styles.closeButtonText}>Close</Text>
             </Pressable>
           </View>
