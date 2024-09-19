@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, TextInput, StyleSheet, Modal, Pressable, Image } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, StyleSheet, Modal, Pressable, Image, ScrollView } from 'react-native';
 import { signOut } from 'firebase/auth'; 
-import { auth, storage } from './firebaseConfig'; 
+import { auth, firestore, storage } from './firebaseConfig'; 
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { doc, setDoc, getDoc } from 'firebase/firestore'; 
 import * as ImagePicker from 'expo-image-picker';
 
 export function MoodJournalScreen({ navigation }) {
@@ -67,8 +68,10 @@ export function MoodJournalScreen({ navigation }) {
       await uploadBytes(imageRef, blob);
       const downloadURL = await getDownloadURL(imageRef);
       console.log('Image uploaded successfully:', downloadURL);
+      return downloadURL; // Return the image URL
     } catch (error) {
       console.error('Upload Error:', error);
+      return null;
     }
   };
 
@@ -80,7 +83,6 @@ export function MoodJournalScreen({ navigation }) {
       console.error('Logout Error:', error);
     }
   };
-
   useEffect(() => {
     navigation.setOptions({
       headerLeft: () => null,
@@ -92,15 +94,75 @@ export function MoodJournalScreen({ navigation }) {
     });
   }, [navigation]);
 
-  const handleEmotionSelect = (emotion) => {
-    setSelectedEmotion(emotion);
-    setEmotionModalVisible(false);
-    setNeutralModalVisible(false);
-    setNegativeModalVisible(false);
+  // Firestore: Check if the user has already selected a mood for today
+  const checkIfMoodSelected = async (currentDate) => {
+    const userId = auth.currentUser.uid;
+    const moodDocRef = doc(firestore, 'moods', `${userId}_${currentDate}`);
+    const moodDoc = await getDoc(moodDocRef);
+    return moodDoc.exists(); // Returns true if mood is already selected
+  };
+
+  // Firestore: Save the selected mood to Firestore
+  const saveMoodToFirebase = async (emotion, currentDate) => {
+    const userId = auth.currentUser.uid;
+    const moodDocRef = doc(firestore, 'moods', `${userId}_${currentDate}`);
+
+    try {
+      await setDoc(moodDocRef, {
+        mood: emotion,
+        date: currentDate,
+        userId: userId
+      });
+      console.log('Mood saved successfully:', emotion);
+    } catch (error) {
+      console.error('Error saving mood:', error);
+    }
+  };
+
+  // Handle mood selection and prevent multiple selections per day
+  const handleEmotionSelect = async (emotion) => {
+    const alreadySelected = await checkIfMoodSelected(currentDate); // Check for the current date
+
+    if (alreadySelected) {
+      alert('You have already selected a mood for today!');
+      setEmotionModalVisible(false);
+      setNeutralModalVisible(false);
+      setNegativeModalVisible(false);
+    } else {
+      setSelectedEmotion(emotion);
+      await saveMoodToFirebase(emotion, currentDate); // Save mood to Firestore
+      setEmotionModalVisible(false);
+      setNeutralModalVisible(false);
+      setNegativeModalVisible(false);
+      alert('Mood saved successfully!');
+    }
+  };
+
+  // Save Journal Entry and Image to Firestore
+  const saveJournalToFirebase = async () => {
+    const userId = auth.currentUser.uid;
+    const journalDocRef = doc(firestore, 'journals', `${userId}_${currentDate}`);
+
+    let imageDownloadURL = null;
+    if (imageUri) {
+      imageDownloadURL = await uploadImage(imageUri); // Upload the image first, then get the URL
+    }
+
+    try {
+      await setDoc(journalDocRef, {
+        journalEntry: journalEntry,
+        imageUrl: imageDownloadURL || '',
+        date: currentDate,
+        userId: userId
+      });
+      alert('Journal Saved');
+    } catch (error) {
+      console.error('Error saving journal:', error);
+    }
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.date}>{currentDate}</Text>
       <Text style={styles.title}>How are you feeling today?</Text>
 
@@ -136,9 +198,19 @@ export function MoodJournalScreen({ navigation }) {
         <Image source={{ uri: imageUri }} style={styles.image} />
       )}
 
-      <TouchableOpacity style={styles.nextButton} onPress={() => alert('Questionnaire')}>
-        <Image source={require('../assets/rightarrow.png')} style={styles.icon} />
-      </TouchableOpacity>
+      {/* Save and Next Buttons */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 5, alignSelf: 'flex-end', }}>
+        <TouchableOpacity style={styles.saveButton} onPress={saveJournalToFirebase}>
+          <Text style={styles.saveButtonText}>Save</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.nextButton} onPress={() => alert('Questionnaire')}>
+          <Image source={require('../assets/rightarrow.png')} style={styles.icon} />
+        </TouchableOpacity>
+      </View>
+      
+      <View style={styles.bottomNav}>
+        {/* Bottom Navigation */}
+      </View>
 
       <View style={styles.bottomNav}>
         <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('MoodJournal')}>
@@ -288,7 +360,7 @@ export function MoodJournalScreen({ navigation }) {
           </View>
         </View>
       </Modal>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -410,10 +482,22 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     marginVertical: 10,
+  }, 
+  saveButton: {
+    backgroundColor: '#000',
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   nextButton: {
-    marginTop: 10,
-    padding: 10,
+    marginTop: 1,
+    padding: 7,
     backgroundColor: '#fff',
     borderRadius: 5,
     alignSelf: 'flex-end',
