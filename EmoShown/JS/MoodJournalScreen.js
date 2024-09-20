@@ -20,6 +20,21 @@ export function MoodJournalScreen({ navigation }) {
   const [historyModalVisible, setHistoryModalVisible] = useState(false);
   const [journalHistory, setJournalHistory] = useState([]);
 
+  const moodIcons = {
+    happy: require('../assets/positive/happiness.png'),
+    excited: require('../assets/positive/excitement.png'),
+    grateful: require('../assets/positive/gratitude.png'),
+    calm: require('../assets/positive/calm.png'),
+    bored: require('../assets/neutral/boredom.png'),
+    numb: require('../assets/neutral/numbness.png'),
+    confused: require('../assets/neutral/confusion.png'),
+    doubt: require('../assets/neutral/ambivalence.png'),
+    angry: require('../assets/negative/anger.png'),
+    lonely: require('../assets/negative/loneliness.png'),
+    sad: require('../assets/negative/sadness.png'),
+    worried: require('../assets/negative/anxiety.png'),
+  };
+
   useEffect(() => {
     const updateDate = () => {
       const date = new Date();
@@ -46,6 +61,21 @@ export function MoodJournalScreen({ navigation }) {
     })();
   }, []);
   
+  useEffect(() => {
+    // Fetch user's mood for today
+    const fetchMoodForToday = async () => {
+      const userId = auth.currentUser.uid;
+      const moodDocRef = doc(firestore, 'moods', `${userId}_${currentDate}`);
+      const moodDoc = await getDoc(moodDocRef);
+      
+      if (moodDoc.exists()) {
+        setMood(moodDoc.data().mood); // Set mood from Firestore
+      }
+    };
+
+    fetchMoodForToday();
+  }, [currentDate]);
+
   const fetchJournalHistory = async () => {
     const userId = auth.currentUser.uid;
     const db = getFirestore(); // Get the Firestore instance
@@ -136,6 +166,7 @@ export function MoodJournalScreen({ navigation }) {
         userId: userId,
         fullName: fullName, // Save the full name
       });
+      setMood(emotion); // Set local state to reflect saved mood
       console.log('Mood saved successfully:', emotion);
     } catch (error) {
       console.error('Error saving mood:', error);
@@ -193,20 +224,31 @@ export function MoodJournalScreen({ navigation }) {
       <Text style={styles.date}>{currentDate}</Text>
       <Text style={styles.title}>How are you feeling today?</Text>
 
-      <View style={styles.moodOptions}>
-        <TouchableOpacity onPress={() => setEmotionModalVisible(true)} style={[styles.moodButton, mood === 'Positive' && styles.selectedMood]}>
-          <Image source={require('../assets/positive/happiness.png')} style={styles.moodIcon} />
-          <Text style={styles.moodText}>positive</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => setNeutralModalVisible(true)} style={[styles.moodButton, mood === 'Neutral' && styles.selectedMood]}>
-          <Image source={require('../assets/neutral/boredom.png')} style={styles.moodIcon} />
-          <Text style={styles.moodText}>neutral</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => setNegativeModalVisible(true)} style={[styles.moodButton, mood === 'Negative' && styles.selectedMood]}>
-          <Image source={require('../assets/negative/sadness.png')} style={styles.moodIcon} />
-          <Text style={styles.moodText}>negative</Text>
-        </TouchableOpacity>
-      </View>
+       {mood ? (
+        <View style={styles.currentMoodContainer}>
+          <Image source={moodIcons[mood]} style={styles.currentMoodIcon} />
+          <Text style={styles.currentMoodText}>{mood}</Text>
+        </View>
+      ) : (
+        <Text style={styles.currentMoodText}></Text>
+      )}
+
+      {!mood && (
+        <View style={styles.moodOptions}>
+          <TouchableOpacity onPress={() => setEmotionModalVisible(true)} style={styles.moodButton}>
+            <Image source={require('../assets/positive/happiness.png')} style={styles.moodIcon} />
+            <Text style={styles.moodText}>positive</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setNeutralModalVisible(true)} style={styles.moodButton}>
+            <Image source={require('../assets/neutral/boredom.png')} style={styles.moodIcon} />
+            <Text style={styles.moodText}>neutral</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setNegativeModalVisible(true)} style={styles.moodButton}>
+            <Image source={require('../assets/negative/sadness.png')} style={styles.moodIcon} />
+            <Text style={styles.moodText}>negative</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       <View style={styles.journalContainer}>
   <TextInput
@@ -430,7 +472,21 @@ export function MoodJournalScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-
+  currentMoodContainer: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 10,
+  },
+  currentMoodIcon: {
+    width: 70,
+    height: 70,
+    marginBottom: 5,
+  },
+  currentMoodText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
   emotionModalContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -468,7 +524,7 @@ const styles = StyleSheet.create({
   closeButton: {
     marginTop: 20,
     padding: 10,
-    backgroundColor: '#1E90FF',
+    backgroundColor: '#000',
     borderRadius: 5,
   },
   closeButtonText: {
@@ -500,17 +556,15 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   moodButton: {
-    padding: 10,
-    backgroundColor: '#ccc',
-    borderRadius: 5,
     alignItems: 'center',
+    margin: 10,
   },
   selectedMood: {
     backgroundColor: '#1E90FF',
   },
   moodText: {
-    fontSize: 16,
-    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
     marginTop: 5,
   },
   moodIcon: {
@@ -658,7 +712,7 @@ const styles = StyleSheet.create({
   logoutButton: {
     marginTop: 10,
     padding: 10,
-    backgroundColor: '#FF6347',
+    backgroundColor: '#000',
     borderRadius: 5,
   },
   logoutButtonText: {
@@ -668,7 +722,7 @@ const styles = StyleSheet.create({
   closeButton: {
     marginTop: 20,
     padding: 10,
-    backgroundColor: '#1E90FF',
+    backgroundColor: '#000',
     borderRadius: 5,
   },
   closeButtonText: {

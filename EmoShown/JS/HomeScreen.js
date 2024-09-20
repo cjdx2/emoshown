@@ -61,16 +61,16 @@ export function HomeScreen({ navigation }) {
         <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('MoodJournal')}>
           <Image source={require('../assets/dailymood.png')} style={styles.icon} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('MoodJournal')}>
+        <TouchableOpacity style={styles.iconButton} onPress={() => alert('Analysis')}>
           <Image source={require('../assets/analysis.png')} style={styles.icon} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Home')}>
           <Image source={require('../assets/home.png')} style={styles.icon} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} onPress={() => alert('Mood Tracking')}>
+        <TouchableOpacity style={styles.iconButton} onPress={() => alert('Activities')}>
           <Image source={require('../assets/recommend.png')} style={styles.icon} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} onPress={() => alert('Settings')}>
+        <TouchableOpacity style={styles.iconButton} onPress={() => alert('Community')}>
           <Image source={require('../assets/community.png')} style={styles.icon} />
         </TouchableOpacity>
       </View>
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
   },
   modalButton: {
     padding: 10,
-    backgroundColor: '#1E90FF',
+    backgroundColor: '#000',
     borderRadius: 5,
     marginBottom: 10,
   },
