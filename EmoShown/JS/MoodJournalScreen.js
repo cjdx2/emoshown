@@ -5,6 +5,7 @@ import { auth, firestore, storage } from './firebaseConfig';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { doc, setDoc, getDoc } from 'firebase/firestore'; 
 import * as ImagePicker from 'expo-image-picker';
+import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
 
 export function MoodJournalScreen({ navigation }) {
   const [mood, setMood] = useState(null);
@@ -16,6 +17,8 @@ export function MoodJournalScreen({ navigation }) {
   const [negativeModalVisible, setNegativeModalVisible] = useState(false);
   const [imageUri, setImageUri] = useState(null);
   const [selectedEmotion, setSelectedEmotion] = useState('');
+  const [historyModalVisible, setHistoryModalVisible] = useState(false);
+  const [journalHistory, setJournalHistory] = useState([]);
 
   useEffect(() => {
     const updateDate = () => {
@@ -42,6 +45,25 @@ export function MoodJournalScreen({ navigation }) {
       }
     })();
   }, []);
+  
+  const fetchJournalHistory = async () => {
+    const userId = auth.currentUser.uid;
+    const db = getFirestore(); // Get the Firestore instance
+    const journalsRef = collection(db, 'journals'); // Reference to the 'journals' collection
+    const q = query(journalsRef, where('userId', '==', userId)); // Create a query to filter by userId
+  
+    try {
+      const querySnapshot = await getDocs(q);
+      const entries = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+  
+      setJournalHistory(entries);
+    } catch (error) {
+      console.error("Error fetching journal history: ", error);
+    }
+  };
 
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -54,7 +76,6 @@ export function MoodJournalScreen({ navigation }) {
     if (!result.canceled) {
       const { uri } = result.assets[0];
       setImageUri(uri);
-      uploadImage(uri);
     }
   };
 
@@ -144,13 +165,13 @@ export function MoodJournalScreen({ navigation }) {
   const saveJournalToFirebase = async () => {
     const userId = auth.currentUser.uid;
     const fullName = auth.currentUser.displayName; 
-    const journalDocRef = doc(firestore, 'journals', `${userId}_${currentDate}`);
-
+    const journalDocRef = doc(firestore, 'journals', `${userId}_${Date.now()}`); // Use Date.now() for a unique ID
+  
     let imageDownloadURL = null;
     if (imageUri) {
       imageDownloadURL = await uploadImage(imageUri); // Upload the image first, then get the URL
     }
-
+  
     try {
       await setDoc(journalDocRef, {
         journalEntry: journalEntry,
@@ -160,6 +181,8 @@ export function MoodJournalScreen({ navigation }) {
         fullName: fullName, // Save the full name
       });
       alert('Journal Saved');
+      setJournalEntry(''); // Clear the journal entry after saving
+      setImageUri(null); // Clear the image after saving
     } catch (error) {
       console.error('Error saving journal:', error);
     }
@@ -186,17 +209,55 @@ export function MoodJournalScreen({ navigation }) {
       </View>
 
       <View style={styles.journalContainer}>
-        <TextInput
-          style={styles.journalInput}
-          placeholder="Journal..."
-          value={journalEntry}
-          onChangeText={setJournalEntry}
-          multiline
-        />
-        <TouchableOpacity onPress={pickImage} style={styles.attachIcon}>
-          <Image source={require('../assets/attach.png')} style={styles.attachIconImage} />
-        </TouchableOpacity>
-      </View>
+  <TextInput
+    style={styles.journalInput}
+    placeholder="Journal..."
+    value={journalEntry}
+    onChangeText={setJournalEntry}
+    multiline
+  />
+  <TouchableOpacity onPress={pickImage} style={styles.attachIcon}>
+    <Image source={require('../assets/attach.png')} style={styles.attachIconImage} />
+  </TouchableOpacity>
+  <TouchableOpacity
+    onPress={() => {
+      fetchJournalHistory();
+      setHistoryModalVisible(true);
+    }}
+    style={styles.historyButton}
+  >
+    <Text style={styles.historyButtonText}>View History</Text>
+  </TouchableOpacity>
+</View>
+
+<Modal
+  animationType="slide"
+  transparent={true}
+  visible={historyModalVisible}
+  onRequestClose={() => setHistoryModalVisible(false)}
+>
+  <View style={styles.historyModalContainer}>
+    <View style={styles.historyModalContent}>
+      <Text style={styles.historyModalTitle}>Journal History</Text>
+      <ScrollView style={styles.scrollView}>
+        {journalHistory.map((entry) => (
+          <View key={entry.id} style={styles.historyEntry}>
+            <Text>{entry.date}</Text>
+            <Text>{entry.journalEntry}</Text>
+            {entry.imageUrl ? (
+              <Image source={{ uri: entry.imageUrl }} style={styles.historyImage} />
+            ) : null}
+          </View>
+        ))}
+      </ScrollView>
+      <Pressable onPress={() => setHistoryModalVisible(false)} style={styles.closeButton}>
+        <Text style={styles.closeButtonText}>Close</Text>
+      </Pressable>
+    </View>
+  </View>
+</Modal>
+
+
 
       {imageUri && (
         <Image source={{ uri: imageUri }} style={styles.image} />
@@ -487,6 +548,44 @@ const styles = StyleSheet.create({
     height: 100,
     marginVertical: 10,
   }, 
+  historyButton: {
+    padding: 10,
+    backgroundColor: '#000', // Change this to your desired color
+    borderRadius: 5,
+  },
+  historyButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  historyModalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  historyModalContent: {
+    width: '80%',
+  maxHeight: '80%', // Set maximum height
+  backgroundColor: 'white',
+  borderRadius: 20,
+  padding: 20,
+  elevation: 5,
+  },
+  scrollView: {
+    flexGrow: 1, // Allow ScrollView to expand
+  },
+  historyModalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  historyEntry: {
+    marginBottom: 10,
+  },
+  historyImage: {
+    width: 100,
+    height: 100,
+    resizeMode: 'cover',
+  },
   saveButton: {
     backgroundColor: '#000',
     paddingVertical: 10,
