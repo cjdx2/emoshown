@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth'; // Include updateProfile
 import { auth, firestore } from './firebaseConfig'; // Import Firebase auth and Firestore
 import { setDoc, doc } from 'firebase/firestore'; // Firestore functions
 
@@ -25,6 +25,11 @@ export function CreateAccountScreen({ navigation }) {
       // Firebase Authentication: Sign up user
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
+
+      // Update user profile with full name
+      await updateProfile(user, {
+        displayName: fullName
+      });
 
       // Save additional user info in Firestore
       await setDoc(doc(firestore, "users", user.uid), {

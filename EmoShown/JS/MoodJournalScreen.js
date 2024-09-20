@@ -105,13 +105,15 @@ export function MoodJournalScreen({ navigation }) {
   // Firestore: Save the selected mood to Firestore
   const saveMoodToFirebase = async (emotion, currentDate) => {
     const userId = auth.currentUser.uid;
+    const fullName = auth.currentUser.displayName; 
     const moodDocRef = doc(firestore, 'moods', `${userId}_${currentDate}`);
 
     try {
       await setDoc(moodDocRef, {
         mood: emotion,
         date: currentDate,
-        userId: userId
+        userId: userId,
+        fullName: fullName, // Save the full name
       });
       console.log('Mood saved successfully:', emotion);
     } catch (error) {
@@ -141,6 +143,7 @@ export function MoodJournalScreen({ navigation }) {
   // Save Journal Entry and Image to Firestore
   const saveJournalToFirebase = async () => {
     const userId = auth.currentUser.uid;
+    const fullName = auth.currentUser.displayName; 
     const journalDocRef = doc(firestore, 'journals', `${userId}_${currentDate}`);
 
     let imageDownloadURL = null;
@@ -153,7 +156,8 @@ export function MoodJournalScreen({ navigation }) {
         journalEntry: journalEntry,
         imageUrl: imageDownloadURL || '',
         date: currentDate,
-        userId: userId
+        userId: userId,
+        fullName: fullName, // Save the full name
       });
       alert('Journal Saved');
     } catch (error) {
