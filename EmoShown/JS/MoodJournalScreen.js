@@ -76,25 +76,6 @@ export function MoodJournalScreen({ navigation }) {
     fetchMoodForToday();
   }, [currentDate]);
 
-  const fetchJournalHistory = async () => {
-    const userId = auth.currentUser.uid;
-    const db = getFirestore(); // Get the Firestore instance
-    const journalsRef = collection(db, 'journals'); // Reference to the 'journals' collection
-    const q = query(journalsRef, where('userId', '==', userId)); // Create a query to filter by userId
-  
-    try {
-      const querySnapshot = await getDocs(q);
-      const entries = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-  
-      setJournalHistory(entries);
-    } catch (error) {
-      console.error("Error fetching journal history: ", error);
-    }
-  };
-
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -251,6 +232,11 @@ export function MoodJournalScreen({ navigation }) {
       )}
 
       <View style={styles.journalContainer}>
+
+  <TouchableOpacity style={styles.historyButton} onPress={() => navigation.navigate('MoodJournalHistory')}>
+    <Image source={require('../assets/history.png')} style={styles.historyIcon} />
+  </TouchableOpacity>
+      
   <TextInput
     style={styles.journalInput}
     placeholder="Journal..."
@@ -261,45 +247,7 @@ export function MoodJournalScreen({ navigation }) {
   <TouchableOpacity onPress={pickImage} style={styles.attachIcon}>
     <Image source={require('../assets/attach.png')} style={styles.attachIconImage} />
   </TouchableOpacity>
-  <TouchableOpacity
-    onPress={() => {
-      fetchJournalHistory();
-      setHistoryModalVisible(true);
-    }}
-    style={styles.historyButton}
-  >
-    <Text style={styles.historyButtonText}>View History</Text>
-  </TouchableOpacity>
 </View>
-
-<Modal
-  animationType="slide"
-  transparent={true}
-  visible={historyModalVisible}
-  onRequestClose={() => setHistoryModalVisible(false)}
->
-  <View style={styles.historyModalContainer}>
-    <View style={styles.historyModalContent}>
-      <Text style={styles.historyModalTitle}>Journal History</Text>
-      <ScrollView style={styles.scrollView}>
-        {journalHistory.map((entry) => (
-          <View key={entry.id} style={styles.historyEntry}>
-            <Text>{entry.date}</Text>
-            <Text>{entry.journalEntry}</Text>
-            {entry.imageUrl ? (
-              <Image source={{ uri: entry.imageUrl }} style={styles.historyImage} />
-            ) : null}
-          </View>
-        ))}
-      </ScrollView>
-      <Pressable onPress={() => setHistoryModalVisible(false)} style={styles.closeButton}>
-        <Text style={styles.closeButtonText}>Close</Text>
-      </Pressable>
-    </View>
-  </View>
-</Modal>
-
-
 
       {imageUri && (
         <Image source={{ uri: imageUri }} style={styles.image} />
@@ -589,8 +537,8 @@ const styles = StyleSheet.create({
   },
   attachIcon: {
     position: 'absolute',
-    bottom: 10,
-    right: 10,
+    bottom: 1,
+    right: 4,
     padding: 10,
   },
   attachIconImage: {
@@ -604,7 +552,7 @@ const styles = StyleSheet.create({
   }, 
   historyButton: {
     padding: 10,
-    backgroundColor: '#000', // Change this to your desired color
+    backgroundColor: '#000',
     borderRadius: 5,
   },
   historyButtonText: {
@@ -618,27 +566,24 @@ const styles = StyleSheet.create({
   },
   historyModalContent: {
     width: '80%',
-  maxHeight: '80%', // Set maximum height
+  maxHeight: '80%',
   backgroundColor: 'white',
   borderRadius: 20,
   padding: 20,
   elevation: 5,
   },
   scrollView: {
-    flexGrow: 1, // Allow ScrollView to expand
+    flexGrow: 1,
   },
-  historyModalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
+  historyButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    zIndex: 1,
   },
-  historyEntry: {
-    marginBottom: 10,
-  },
-  historyImage: {
-    width: 100,
-    height: 100,
-    resizeMode: 'cover',
+  historyIcon: {
+    width: 28,
+    height: 28,
   },
   saveButton: {
     backgroundColor: '#000',

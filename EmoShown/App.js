@@ -4,7 +4,8 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { CreateAccountScreen } from './JS/CreateAccountScreen';
 import { LoginScreen } from './JS/LoginScreen';
 import { HomeScreen } from './JS/HomeScreen';
-import { MoodJournalScreen } from './JS/MoodJournalScreen'; // Keep this if you still use the MoodJournalScreen
+import { MoodJournalScreen } from './JS/MoodJournalScreen';
+import { MoodJournalHistoryScreen } from './JS/MoodJournalHistoryScreen';
 
 const Stack = createStackNavigator();
 
@@ -16,6 +17,7 @@ export default function App() {
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="MoodJournal" component={MoodJournalScreen} />
+        <Stack.Screen name="MoodJournalHistory" component={MoodJournalHistoryScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
