@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, TextInput, StyleSheet, Modal, Pressable, Image, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, StyleSheet, Modal, Pressable, Image, ScrollView, Alert } from 'react-native';
 import { signOut } from 'firebase/auth'; 
 import { auth, firestore, storage } from './firebaseConfig'; 
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -7,10 +7,9 @@ import { doc, setDoc, getDoc } from 'firebase/firestore';
 import * as ImagePicker from 'expo-image-picker';
 import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
 
-
 export function MoodJournalScreen({ navigation }) {
   const [mood, setMood] = useState(null);
-  const [journalEntry, setJournalEntry] = useState('');
+  const [journalEntry, setJournalEntry] = useState(''); // State for journal entry
   const [currentDate, setCurrentDate] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [emotionModalVisible, setEmotionModalVisible] = useState(false);
@@ -20,6 +19,7 @@ export function MoodJournalScreen({ navigation }) {
   const [selectedEmotion, setSelectedEmotion] = useState('');
   const [historyModalVisible, setHistoryModalVisible] = useState(false);
   const [journalHistory, setJournalHistory] = useState([]);
+  const [sentimentResult, setSentimentResult] = useState(null); // State for sentiment analysis result
 
   const moodIcons = {
     happy: require('../assets/positive/happiness.png'),
@@ -35,6 +35,8 @@ export function MoodJournalScreen({ navigation }) {
     sad: require('../assets/negative/sadness.png'),
     worried: require('../assets/negative/anxiety.png'),
   };
+
+  const BACKEND_URL = 'http://192.168.1.9:5000/analyze'; // kiann url
 
   useEffect(() => {
     const updateDate = () => {
@@ -116,6 +118,7 @@ export function MoodJournalScreen({ navigation }) {
       console.error('Logout Error:', error);
     }
   };
+
   useEffect(() => {
     navigation.setOptions({
       headerLeft: () => null,
@@ -174,6 +177,31 @@ export function MoodJournalScreen({ navigation }) {
     }
   };
 
+  // Function to analyze sentiment of the journal entry
+  const analyzeSentiment = async (text) => {
+    try {
+      const response = await fetch(BACKEND_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch sentiment analysis');
+      }
+
+      const result = await response.json();
+      setSentimentResult(result); // Store sentiment result
+      return result;
+    } catch (error) {
+      console.error('Sentiment Analysis Error:', error);
+      Alert.alert('Error', 'Failed to analyze sentiment');
+      return null;
+    }
+  };
+
   // Save Journal Entry and Image to Firestore
   const saveJournalToFirebase = async () => {
     const userId = auth.currentUser.uid;
@@ -184,7 +212,9 @@ export function MoodJournalScreen({ navigation }) {
     if (imageUri) {
       imageDownloadURL = await uploadImage(imageUri); // Upload the image first, then get the URL
     }
-  
+
+    const sentiment = await analyzeSentiment(journalEntry);  // Analyze sentiment before saving
+
     try {
       await setDoc(journalDocRef, {
         journalEntry: journalEntry,
@@ -192,8 +222,9 @@ export function MoodJournalScreen({ navigation }) {
         date: currentDate,
         userId: userId,
         fullName: fullName, // Save the full name
+        sentiment: sentiment || {},  // Save the sentiment result
       });
-      alert('Journal Saved');
+      alert('Journal Saved with Sentiment Analysis');
       setJournalEntry(''); // Clear the journal entry after saving
       setImageUri(null); // Clear the image after saving
     } catch (error) {
@@ -234,21 +265,21 @@ export function MoodJournalScreen({ navigation }) {
 
       <View style={styles.journalContainer}>
 
-  <TouchableOpacity style={styles.historyButton} onPress={() => navigation.navigate('MoodJournalHistory')}>
-    <Image source={require('../assets/history.png')} style={styles.historyIcon} />
-  </TouchableOpacity>
+        <TouchableOpacity style={styles.historyButton} onPress={() => navigation.navigate('MoodJournalHistory')}>
+          <Image source={require('../assets/history.png')} style={styles.historyIcon} />
+        </TouchableOpacity>
       
-  <TextInput
-    style={styles.journalInput}
-    placeholder="Journal..."
-    value={journalEntry}
-    onChangeText={setJournalEntry}
-    multiline
-  />
-  <TouchableOpacity onPress={pickImage} style={styles.attachIcon}>
-    <Image source={require('../assets/attach.png')} style={styles.attachIconImage} />
-  </TouchableOpacity>
-</View>
+        <TextInput
+          style={styles.journalInput}
+          placeholder="Journal..."
+          value={journalEntry}
+          onChangeText={setJournalEntry}
+          multiline
+        />
+        <TouchableOpacity onPress={pickImage} style={styles.attachIcon}>
+          <Image source={require('../assets/attach.png')} style={styles.attachIconImage} />
+        </TouchableOpacity>
+      </View>
 
       {imageUri && (
         <Image source={{ uri: imageUri }} style={styles.image} />
@@ -264,6 +295,16 @@ export function MoodJournalScreen({ navigation }) {
         </TouchableOpacity>
       </View>
       
+      {sentimentResult && (
+        <View style={styles.sentimentContainer}>
+          <Text style={styles.sentimentText}>Sentiment Analysis:</Text>
+          <Text>Positive: {sentimentResult.pos}</Text>
+          <Text>Neutral: {sentimentResult.neu}</Text>
+          <Text>Negative: {sentimentResult.neg}</Text>
+          <Text>Compound: {sentimentResult.compound}</Text>
+        </View>
+      )}
+
       <View style={styles.bottomNav}>
         {/* Bottom Navigation */}
       </View>
@@ -420,7 +461,15 @@ export function MoodJournalScreen({ navigation }) {
   );
 }
 
+
 const styles = StyleSheet.create({
+  container: { flex: 1, padding: 20, justifyContent: 'center' },
+  journalInput: { borderWidth: 1, borderColor: '#ccc', padding: 10, marginBottom: 10 },
+  saveButton: { backgroundColor: 'blue', padding: 10, borderRadius: 5 },
+  saveButtonText: { color: '#fff', textAlign: 'center' },
+  sentimentContainer: { marginTop: 20 },
+  sentimentText: { fontWeight: 'bold', marginTop: 20, textAlign: 'center' 
+  },
   currentMoodContainer: {
     flexDirection: 'column',
     alignItems: 'center',
