@@ -61,7 +61,7 @@ export function HomeScreen({ navigation }) {
         <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('MoodJournal')}>
           <Image source={require('../assets/dailymood.png')} style={styles.icon} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} onPress={() => alert('Analysis')}>
+        <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Analysis')}>
           <Image source={require('../assets/analysis.png')} style={styles.icon} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Home')}>

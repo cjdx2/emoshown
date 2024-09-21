@@ -7,6 +7,7 @@ import { doc, setDoc, getDoc } from 'firebase/firestore';
 import * as ImagePicker from 'expo-image-picker';
 import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
 
+
 export function MoodJournalScreen({ navigation }) {
   const [mood, setMood] = useState(null);
   const [journalEntry, setJournalEntry] = useState('');
@@ -271,7 +272,7 @@ export function MoodJournalScreen({ navigation }) {
         <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('MoodJournal')}>
           <Image source={require('../assets/dailymood.png')} style={styles.icon} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} onPress={() => alert('Analysis')}>
+        <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Analysis')}>
           <Image source={require('../assets/analysis.png')} style={styles.icon} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Home')}>
