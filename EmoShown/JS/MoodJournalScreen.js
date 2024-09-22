@@ -178,59 +178,61 @@ export function MoodJournalScreen({ navigation }) {
   };
 
   // Function to analyze sentiment of the journal entry
-  const analyzeSentiment = async (text) => {
-    try {
-      const response = await fetch(BACKEND_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ text }),
-      });
+ // Function to analyze sentiment of the journal entry and emotion
+const analyzeSentiment = async (text, emotion) => {
+  try {
+    const response = await fetch(BACKEND_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text, emotion }),  // Send both text and emotion
+    });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch sentiment analysis');
-      }
-
-      const result = await response.json();
-      setSentimentResult(result); // Store sentiment result
-      return result;
-    } catch (error) {
-      console.error('Sentiment Analysis Error:', error);
-      Alert.alert('Error', 'Failed to analyze sentiment');
-      return null;
+    if (!response.ok) {
+      throw new Error('Failed to fetch sentiment analysis');
     }
-  };
+    
+    const result = await response.json();
+    setSentimentResult(result); // Store sentiment result
+    return result;
+  } catch (error) {
+    console.error('Sentiment Analysis Error:', error);
+    Alert.alert('Error', 'Failed to analyze sentiment');
+    return null;
+  }
+};
 
   // Save Journal Entry and Image to Firestore
-  const saveJournalToFirebase = async () => {
-    const userId = auth.currentUser.uid;
-    const fullName = auth.currentUser.displayName; 
-    const journalDocRef = doc(firestore, 'journals', `${userId}_${Date.now()}`); // Use Date.now() for a unique ID
-  
-    let imageDownloadURL = null;
-    if (imageUri) {
-      imageDownloadURL = await uploadImage(imageUri); // Upload the image first, then get the URL
-    }
+const saveJournalToFirebase = async () => {
+  const userId = auth.currentUser.uid;
+  const fullName = auth.currentUser.displayName; 
+  const journalDocRef = doc(firestore, `journals/${userId}_${Date.now()}`); // Use Date.now() for a unique ID
 
-    const sentiment = await analyzeSentiment(journalEntry);  // Analyze sentiment before saving
+  let imageDownloadURL = null;
+  if (imageUri) {
+    imageDownloadURL = await uploadImage(imageUri); // Upload the image first, then get the URL
+  }
 
-    try {
-      await setDoc(journalDocRef, {
-        journalEntry: journalEntry,
-        imageUrl: imageDownloadURL || '',
-        date: currentDate,
-        userId: userId,
-        fullName: fullName, // Save the full name
-        sentiment: sentiment || {},  // Save the sentiment result
-      });
-      alert('Journal Saved with Sentiment Analysis');
-      setJournalEntry(''); // Clear the journal entry after saving
-      setImageUri(null); // Clear the image after saving
-    } catch (error) {
-      console.error('Error saving journal:', error);
-    }
-  };
+  const sentiment = await analyzeSentiment(journalEntry, selectedEmotion);  // Analyze sentiment with journal entry and emotion
+
+  try {
+    await setDoc(journalDocRef, {
+      journalEntry: journalEntry,
+      imageUrl: imageDownloadURL || '',
+      date: currentDate,
+      userId: userId,
+      fullName: fullName, // Save the full name
+      sentiment: sentiment || {},  // Save the sentiment result
+      emotion: selectedEmotion, // Save the selected emotion
+    });
+    alert('Journal Saved!');
+    setJournalEntry(''); // Clear the journal entry after saving
+    setImageUri(null); // Clear the image after saving
+  } catch (error) {
+    console.error('Error saving journal:', error);
+  }
+};
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -295,15 +297,17 @@ export function MoodJournalScreen({ navigation }) {
         </TouchableOpacity>
       </View>
       
-      {sentimentResult && (
-        <View style={styles.sentimentContainer}>
-          <Text style={styles.sentimentText}>Sentiment Analysis:</Text>
-          <Text>Positive: {sentimentResult.pos}</Text>
-          <Text>Neutral: {sentimentResult.neu}</Text>
-          <Text>Negative: {sentimentResult.neg}</Text>
-          <Text>Compound: {sentimentResult.compound}</Text>
-        </View>
-      )}
+{/*
+{sentimentResult && (
+  <View style={styles.sentimentContainer}>
+    <Text style={styles.sentimentText}>Sentiment Analysis:</Text>
+    <Text>Positive: {sentimentResult.pos}</Text>
+    <Text>Neutral: {sentimentResult.neu}</Text>
+    <Text>Negative: {sentimentResult.neg}</Text>
+    <Text>Compound: {sentimentResult.compound}</Text>
+  </View>
+)}
+*/}
 
       <View style={styles.bottomNav}>
         {/* Bottom Navigation */}

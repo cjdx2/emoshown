@@ -12,11 +12,16 @@ def analyze_sentiment():
     try:
         data = request.json
         text = data.get('text', '')
-        if not text:
-            return jsonify({'error': 'No text provided'}), 400
+        emotion = data.get('emotion', '')
+
+        if not text and not emotion:
+            return jsonify({'error': 'No text or emotion provided'}), 400
+
+        # Combine text and emotion for analysis
+        combined_text = f'{emotion} {text}'.strip().lower()
 
         # Perform sentiment analysis
-        scores = analyzer.polarity_scores(text)
+        scores = analyzer.polarity_scores(combined_text)
         return jsonify(scores)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
