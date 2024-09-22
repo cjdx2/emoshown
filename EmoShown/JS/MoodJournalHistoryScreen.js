@@ -1,24 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, ScrollView, TouchableOpacity, Modal, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { auth, firestore } from './firebaseConfig';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
-
-const MoodIcon = ({ mood }) => {
-  const moodIcons = {
-    happy: require('../assets/positive/happiness.png'),
-    excited: require('../assets/positive/excitement.png'),
-    grateful: require('../assets/positive/gratitude.png'),
-    calm: require('../assets/positive/calm.png'),
-    bored: require('../assets/neutral/boredom.png'),
-    numb: require('../assets/neutral/numbness.png'),
-    confused: require('../assets/neutral/confusion.png'),
-    doubt: require('../assets/neutral/ambivalence.png'),
-    angry: require('../assets/negative/anger.png'),
-    lonely: require('../assets/negative/loneliness.png'),
-    sad: require('../assets/negative/sadness.png'),
-    worried: require('../assets/negative/anxiety.png'),
-  };
-};
 
 export function MoodJournalHistoryScreen({ navigation }) {
   const [journalHistory, setJournalHistory] = useState([]);
@@ -35,30 +18,14 @@ export function MoodJournalHistoryScreen({ navigation }) {
           id: doc.id,
           ...doc.data(),
         }));
+
         setJournalHistory(journals);
       } catch (error) {
         console.error('Error fetching journal history:', error);
       }
     };
 
-    const fetchMoodData = async (userId, date) => {
-      const moodRef = doc(firestore, 'moods', userId, date);
-      const moodSnapshot = await getDoc(moodRef);
-      const moodData = moodSnapshot.data();
-      return moodData;
-    };
-
-    fetchJournalHistory().then((journals) => {
-      Promise.all(
-        journals.map(journal => fetchMoodData(journal.userId, journal.date))
-      ).then(moodData => {
-        const journalHistoryWithMood = journals.map((journal, index) => ({
-          ...journal,
-          mood: moodData[index]
-        }));
-        setJournalHistory(journalHistoryWithMood);
-      });
-    });
+    fetchJournalHistory();
   }, []);
 
   return (
@@ -72,7 +39,6 @@ export function MoodJournalHistoryScreen({ navigation }) {
             return (
               <View key={journal.id} style={styles.journalItem}>
                 <Text style={styles.dateText}>{journal.date}</Text>
-                <MoodIcon mood={journal.mood?.mood} />
                 <Text style={styles.entryText}>{journal.journalEntry}</Text>
                 {journal.imageUrl && (
                   <Image source={{ uri: journal.imageUrl }} style={styles.journalImage} />
@@ -132,11 +98,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     marginBottom: 5,
-  },
-  moodIcon: {
-    width: 30,
-    height: 30,
-    marginRight: 5,
   },
   entryText: {
     fontSize: 16,
