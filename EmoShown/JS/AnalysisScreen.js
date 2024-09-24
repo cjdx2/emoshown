@@ -4,8 +4,6 @@ import { auth, firestore } from './firebaseConfig';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { format, subDays } from 'date-fns';
 
-
-
 // Predefine a mapping for mood images
 const moodImages = {
     happy: require('../assets/positive/happiness.png'),
@@ -28,6 +26,7 @@ export function AnalysisScreen({ navigation }) {
     const [moodProgress, setMoodProgress] = useState(0);
     const [moodHistory, setMoodHistory] = useState([]);
     const [modalVisible, setModalVisible] = useState(false);
+    const [anomalies, setAnomalies] = useState([]); // State for anomalies
 
     const handleLogout = async () => {
         try {
@@ -36,169 +35,201 @@ export function AnalysisScreen({ navigation }) {
         } catch (error) {
           console.error('Logout Error:', error);
         }
-      };
-    
-      useEffect(() => {
-        navigation.setOptions({
-          headerLeft: () => null,
-          headerRight: () => (
-            <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.menuButton}>
-              <Image source={require('../assets/menu.png')} style={styles.menuButtonImage} />
-            </TouchableOpacity>
-          ),
-        });
-      }, [navigation]);
-
-  useEffect(() => {
-    const updateDate = () => {
-      const date = new Date();
-      const formattedDate = date.toLocaleDateString('en-US', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      });
-      setCurrentDate(formattedDate);
     };
+    
+    useEffect(() => {
+        navigation.setOptions({
+            headerLeft: () => null,
+            headerRight: () => (
+                <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.menuButton}>
+                    <Image source={require('../assets/menu.png')} style={styles.menuButtonImage} />
+                </TouchableOpacity>
+            ),
+        });
+    }, [navigation]);
 
-    updateDate();
-    const intervalId = setInterval(updateDate, 1000);
-    return () => clearInterval(intervalId);
-  }, []);
+    useEffect(() => {
+        const updateDate = () => {
+            const date = new Date();
+            const formattedDate = date.toLocaleDateString('en-US', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+            });
+            setCurrentDate(formattedDate);
+        };
 
-  useEffect(() => {
-    const fetchMoodData = async () => {
-      const userId = auth.currentUser.uid;
-      const journalsRef = collection(firestore, 'journals');
-      const today = format(new Date(), 'yyyy-MM-dd');
+        updateDate();
+        const intervalId = setInterval(updateDate, 1000);
+        return () => clearInterval(intervalId);
+    }, []);
 
-      const todayQuery = query(journalsRef, where('userId', '==', userId), where('date', '==', today));
-      const todaySnapshot = await getDocs(todayQuery);
+    useEffect(() => {
+      const fetchMoodData = async () => {
+          const userId = auth.currentUser.uid;
+          const journalsRef = collection(firestore, 'journals');
+          const today = format(new Date(), 'MMMM d, yyyy'); // Ensure the date format matches your Firestore format
+  
+          const todayQuery = query(journalsRef, where('userId', '==', userId), where('date', '==', today));
+          const todaySnapshot = await getDocs(todayQuery);
+  
+          if (!todaySnapshot.empty) {
+              const todayData = todaySnapshot.docs[0].data();
+              setMoodToday(todayData.emotion); // Assuming you're interested in the 'emotion' field
+              setMoodProgress(todayData.sentiment ? todayData.sentiment.compound || 0 : 0); // Extract compound score
+          } else {
+              setMoodToday('neutral');
+              setMoodProgress(0);
+          }
+  
+          // Fetch mood history for the last 7 days
+          const last7DaysData = [];
+          for (let i = 6; i >= 0; i--) {
+              const date = format(subDays(new Date(), i), 'MMMM d, yyyy'); // Ensure format matches Firestore
+              const dayQuery = query(journalsRef, where('userId', '==', userId), where('date', '==', date));
+              const daySnapshot = await getDocs(dayQuery);
+  
+              if (!daySnapshot.empty) {
+                  const dayData = daySnapshot.docs[0].data();
+                  last7DaysData.push({
+                      day: format(subDays(new Date(), i), 'eee'), // e.g., Mon, Tue, etc.
+                      emotion: dayData.emotion || 'neutral',
+                      sentiment: dayData.sentiment ? dayData.sentiment.compound : 0, // Add sentiment score
+                  });
+              } else {
+                  last7DaysData.push({
+                      day: format(subDays(new Date(), i), 'eee'),
+                      emotion: 'neutral', // Default to neutral if no data
+                      sentiment: 0, // Default sentiment score
+                  });
+              }
+          }
+  
+          setMoodHistory(last7DaysData);
+          detectAnomalies(last7DaysData);
+      };
+  
+      fetchMoodData();
+  }, []);  
 
-      if (!todaySnapshot.empty) {
-        const todayData = todaySnapshot.docs[0].data();
-        setMoodToday(todayData.mood);
-        setMoodProgress(todayData.moodProgress || 0);
-      } else {
-        setMoodToday('neutral');
-        setMoodProgress(0);
-      }
+  const detectAnomalies = (history) => {
+    const threshold = 0.2; // Define a threshold for mood change
+    const anomaliesDetected = [];
 
-     // Fetch mood history for the last 7 days
-     const last7DaysData = [];
-     for (let i = 6; i >= 0; i--) {
-         const date = format(subDays(new Date(), i), 'yyyy-MM-dd');
-         const dayQuery = query(journalsRef, where('userId', '==', userId), where('date', '==', date));
-         const daySnapshot = await getDocs(dayQuery);
+    for (let i = 1; i < history.length; i++) {
+        const currentSentiment = history[i].sentiment || 0; // Use the sentiment score
+        const previousSentiment = history[i - 1].sentiment || 0;
 
-         if (!daySnapshot.empty) {
-             const dayData = daySnapshot.docs[0].data();
-             last7DaysData.push({
-                 day: format(subDays(new Date(), i), 'eee'), // e.g., Mon, Tue, etc.
-                 mood: dayData.mood || 'neutral',
-             });
-         } else {
-             last7DaysData.push({
-                 day: format(subDays(new Date(), i), 'eee'),
-                 mood: 'neutral', // Default to neutral if no data
-             });
-         }
-     }
+        const change = currentSentiment - previousSentiment;
+        if (Math.abs(change) >= threshold) {
+            anomaliesDetected.push({
+                day: history[i].day,
+                change: (change * 100).toFixed(2), // Convert to percentage for better readability
+            });
+        }
+    }
 
-     setMoodHistory(last7DaysData);
- };
-
- fetchMoodData();
-}, []);
-
-const renderMoodProgress = () => {
-    const moodText = moodProgress >= 0 ? `+${moodProgress}% happier than yesterday` : `${moodProgress}% less happy than yesterday`;
-    return <Text style={styles.moodProgress}>{moodText}</Text>;
+    setAnomalies(anomaliesDetected); // Update the anomalies state
 };
 
-return (
-    <View style={styles.container}>
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
-            <Text style={styles.date}>{currentDate}</Text>
-            <Text style={styles.moodText}>You've been feeling <Text style={styles.moodHighlight}>{moodToday}</Text> today</Text>
-            {renderMoodProgress()}
+    const renderMoodProgress = () => {
+        const moodText = moodProgress >= 0 ? `+${moodProgress}% happier than yesterday` : `${moodProgress}% less happy than yesterday`;
+        return <Text style={styles.moodProgress}>{moodText}</Text>;
+    };
 
-            <View style={styles.moodHistory}>
-                {moodHistory.map((moodItem, index) => (
-                    <View key={index} style={styles.moodHistoryItem}>
-                        <Text style={styles.moodHistoryDay}>{moodItem.day}</Text>
-                        <Image 
-                            source={moodImages[moodItem.mood] || moodImages.neutral}
-                            style={styles.moodIcon} 
-                        />
+    return (
+        <View style={styles.container}>
+            <ScrollView contentContainerStyle={styles.scrollContainer}>
+                <Text style={styles.date}>{currentDate}</Text>
+                <Text style={styles.moodText}>You've been feeling <Text style={styles.moodHighlight}>{moodToday}</Text> today</Text>
+                {renderMoodProgress()}
+
+                <View style={styles.moodHistory}>
+                    {moodHistory.map((moodItem, index) => (
+                        <View key={index} style={styles.moodHistoryItem}>
+                            <Text style={styles.moodHistoryDay}>{moodItem.day}</Text>
+                            <Image 
+                                source={moodImages[moodItem.mood] || moodImages.neutral}
+                                style={styles.moodIcon} 
+                            />
+                        </View>
+                    ))}
+                </View>
+
+                <View style={styles.analysisContainer}>
+                    <View style={styles.analysisItem}>
+                        <Text style={styles.analysisLabel}>stress level</Text>
+                        <Text style={styles.analysisValue}>low</Text>
                     </View>
-                ))}
+                    <View style={styles.analysisItem}>
+                        <Text style={styles.analysisLabel}>sleep quality</Text>
+                        <Text style={styles.analysisValue}>excellent</Text>
+                    </View>
+                </View>
+
+                <View style={styles.screenTimeContainer}>
+                    <Text style={styles.screenTimeLabel}>screen time</Text>
+                    <Text style={styles.screenTimeValue}>6 hrs 30 mins</Text>
+                </View>
+
+                {/* Anomaly Detection Results */}
+                {anomalies.length > 0 && (
+                    <View style={styles.anomalyContainer}>
+                        <Text style={styles.anomalyTitle}>Anomaly Detection Results:</Text>
+                        {anomalies.map((anomaly, index) => (
+                            <Text key={index} style={styles.anomalyText}>
+                                On {anomaly.day}, mood changed by {anomaly.change}%
+                            </Text>
+                        ))}
+                    </View>
+                )}
+
+                {/* Back and Next Button */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 5, alignSelf: 'flex-end', }}>
+                    <TouchableOpacity style={styles.nextButton} onPress={() => alert('Full Details of Analysis')}>
+                        <Image source={require('../assets/rightarrow.png')} style={styles.icon} />
+                    </TouchableOpacity>
+                </View>
+            </ScrollView>
+            
+            {/* Modal for Logout */}
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={modalVisible}
+                onRequestClose={() => setModalVisible(false)}>
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                        <Pressable onPress={handleLogout} style={styles.logoutButton}>
+                            <Text style={styles.logoutButtonText}>Logout</Text>
+                        </Pressable>
+                        <Pressable onPress={() => setModalVisible(false)} style={styles.closeButton}>
+                            <Text style={styles.closeButtonText}>Close</Text>
+                        </Pressable>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Fixed Bottom Navigation */}
+            <View style={styles.bottomNav}>
+                <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('MoodJournal')}>
+                    <Image source={require('../assets/dailymood.png')} style={styles.icon} />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Analysis')}>
+                    <Image source={require('../assets/analysis.png')} style={styles.icon} />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Home')}>
+                    <Image source={require('../assets/home.png')} style={styles.icon} />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.iconButton} onPress={() => alert('Activities')}>
+                    <Image source={require('../assets/recommend.png')} style={styles.icon} />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.iconButton} onPress={() => alert('Community')}>
+                    <Image source={require('../assets/community.png')} style={styles.icon} />
+                </TouchableOpacity>
             </View>
-
-        <View style={styles.analysisContainer}>
-          <View style={styles.analysisItem}>
-            <Text style={styles.analysisLabel}>stress level</Text>
-            <Text style={styles.analysisValue}>low</Text>
-          </View>
-          <View style={styles.analysisItem}>
-            <Text style={styles.analysisLabel}>sleep quality</Text>
-            <Text style={styles.analysisValue}>excellent</Text>
-          </View>
         </View>
-
-        <View style={styles.screenTimeContainer}>
-          <Text style={styles.screenTimeLabel}>screen time</Text>
-          <Text style={styles.screenTimeValue}>6 hrs 30 mins</Text>
-        </View>
-     
-
-      {/* Back and Next Button */}
-       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 5, alignSelf: 'flex-end', }}>
-        <TouchableOpacity style={styles.nextButton} onPress={() => alert('Full Details of Analysis')}>
-          <Image source={require('../assets/rightarrow.png')} style={styles.icon} />
-        </TouchableOpacity>
-      </View>
-      </ScrollView>
-    {/* Modal for Logout */}
-        <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Pressable onPress={handleLogout} style={styles.logoutButton}>
-              <Text style={styles.logoutButtonText}>Logout</Text>
-            </Pressable>
-            <Pressable onPress={() => setModalVisible(false)} style={styles.closeButton}>
-              <Text style={styles.closeButtonText}>Close</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
-      
-
-       
-
-      {/* Fixed Bottom Navigation */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('MoodJournal')}>
-          <Image source={require('../assets/dailymood.png')} style={styles.icon} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Analysis')}>
-          <Image source={require('../assets/analysis.png')} style={styles.icon} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Home')}>
-          <Image source={require('../assets/home.png')} style={styles.icon} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} onPress={() => alert('Activities')}>
-          <Image source={require('../assets/recommend.png')} style={styles.icon} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} onPress={() => alert('Community')}>
-          <Image source={require('../assets/community.png')} style={styles.icon} />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+    );
 }
 
 const styles = StyleSheet.create({
@@ -359,4 +390,20 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
   },
+  anomalyContainer: {
+        marginTop: 20,
+        padding: 10,
+        borderWidth: 1,
+        borderColor: 'red',
+        borderRadius: 5,
+    },
+    anomalyTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: 'red',
+    },
+    anomalyText: {
+        fontSize: 16,
+        color: 'red',
+    },
 });
