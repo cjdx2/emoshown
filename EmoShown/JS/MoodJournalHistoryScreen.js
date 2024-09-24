@@ -93,6 +93,9 @@ const styles = StyleSheet.create({
     padding: 15,
     backgroundColor: '#f9f9f9',
     borderRadius: 10,
+    borderColor: '#000',
+    borderWidth: 1,
+    borderRadius: 8,
   },
   dateText: {
     fontSize: 14,

@@ -20,6 +20,7 @@ export function MoodJournalScreen({ navigation }) {
   const [historyModalVisible, setHistoryModalVisible] = useState(false);
   const [journalHistory, setJournalHistory] = useState([]);
   const [sentimentResult, setSentimentResult] = useState(null); // State for sentiment analysis result
+  const [weeklyCheckInVisible, setWeeklyCheckInVisible] = useState(false); // Weekly Check-In state
 
   const moodIcons = {
     happy: require('../assets/positive/happiness.png'),
@@ -36,7 +37,7 @@ export function MoodJournalScreen({ navigation }) {
     worried: require('../assets/negative/anxiety.png'),
   };
 
-  const BACKEND_URL = 'http://192.168.1.9:5000/analyze'; // kiann url
+  const BACKEND_URL = 'http://192.168.1.9:5000/analyze'; // pc url
 
   useEffect(() => {
     const updateDate = () => {
@@ -54,6 +55,33 @@ export function MoodJournalScreen({ navigation }) {
 
     return () => clearInterval(intervalId);
   }, []);
+
+// Set weekly check-in visibility
+useEffect(() => {
+  // Assuming you store the last check-in date in Firestore or AsyncStorage, retrieve it here
+  const checkLastCheckIn = async () => {
+    try {
+      const userId = auth.currentUser.uid;
+      const lastCheckInDoc = await getDoc(doc(firestore, 'checkins', userId));
+      
+      if (lastCheckInDoc.exists()) {
+        const lastCheckIn = lastCheckInDoc.data().lastCheckIn.toDate();
+        const currentDate = new Date();
+
+        // Check if the current date is 7 days after the last check-in
+        const diffDays = Math.ceil((currentDate - lastCheckIn) / (1000 * 60 * 60 * 24));
+        setWeeklyCheckInVisible(diffDays >= 0);
+      } else {
+        // If no check-in record exists, show the notification
+        setWeeklyCheckInVisible(true);
+      }
+    } catch (error) {
+      console.error('Error checking last check-in date:', error);
+    }
+  };
+
+  checkLastCheckIn();
+}, []);
 
   useEffect(() => {
     (async () => {
@@ -234,6 +262,25 @@ const saveJournalToFirebase = async () => {
   }
 };
 
+// Function to navigate to the questionnaire screen and reset weekly check-in
+const handleWeeklyCheckIn = async () => {
+  try {
+    // Update the last check-in date to the current date
+    const userId = auth.currentUser.uid;
+    await setDoc(doc(firestore, 'checkins', userId), {
+      lastCheckIn: new Date(),
+    });
+
+    // Hide the notification
+    setWeeklyCheckInVisible(false);
+
+    // Navigate to the Questionnaire screen
+    navigation.navigate('Questionnaire');
+  } catch (error) {
+    console.error('Error updating last check-in date:', error);
+  }
+};
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.date}>{currentDate}</Text>
@@ -287,16 +334,33 @@ const saveJournalToFirebase = async () => {
         <Image source={{ uri: imageUri }} style={styles.image} />
       )}
 
-      {/* Save and Next Buttons */}
+      {/* Save Button*/}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 5, alignSelf: 'flex-end', }}>
         <TouchableOpacity style={styles.saveButton} onPress={saveJournalToFirebase}>
           <Text style={styles.saveButtonText}>Save</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.nextButton} onPress={() => alert('Questionnaire')}>
-          <Image source={require('../assets/rightarrow.png')} style={styles.icon} />
-        </TouchableOpacity>
       </View>
       
+      {/* Weekly Check-In Notification */}
+{weeklyCheckInVisible && (
+  <View style={styles.notificationContainer}>
+    <View style={styles.notificationContent}>
+      <Image 
+        source={require('../assets/notification.png')} 
+        style={styles.checkinIcon} 
+      />
+      <Text style={styles.notificationText}>
+        It's time for your weekly check-in!
+      </Text>
+    </View>
+    <TouchableOpacity style={styles.proceedButton} onPress={handleWeeklyCheckIn}>
+      <Text style={styles.proceedButtonText}>
+        Would you like to proceed?
+      </Text>
+    </TouchableOpacity>
+  </View>
+
+)}
 {/*
 {sentimentResult && (
   <View style={styles.sentimentContainer}>
@@ -576,13 +640,13 @@ const styles = StyleSheet.create({
   journalContainer: {
     flexDirection: 'column',
     alignItems: 'flex-start',
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 5,
     padding: 10,
     height: 250,
     width: '100%',
     position: 'relative',
+    borderColor: '#000',
+    borderWidth: 1,
+    borderRadius: 8,
   },
   journalInput: {
     flex: 1,
@@ -640,29 +704,57 @@ const styles = StyleSheet.create({
     height: 28,
   },
   saveButton: {
-    backgroundColor: '#000',
+    backgroundColor: '#fff',
     paddingVertical: 10,
     paddingHorizontal: 10,
     borderRadius: 5,
     alignItems: 'center',
+    borderColor: '#000',
+    borderWidth: 1,
+    borderRadius: 8,
   },
   saveButtonText: {
-    color: '#fff',
+    color: '#000',
     fontSize: 16,
     fontWeight: 'bold',
   },
-  nextButton: {
-    marginTop: 1,
-    padding: 7,
+  notificationContainer: {
+    padding: 10, // Reduce padding to make the container smaller
+    borderColor: '#000',
+    borderWidth: 1,
+    borderRadius: 8,
     backgroundColor: '#fff',
-    borderRadius: 5,
-    alignSelf: 'flex-end',
-    justifyContent: 'center',
-    alignItems: 'center',
+    marginBottom: 8, // Reduce space between notifications
+    width: '60%',
+    alignSelf: 'flex-start', // Align container to the left
   },
-  nextButtonText: {
-    color: '#fff',
-    fontSize: 16,
+  notificationContent: {
+    flexDirection: 'row', // Place icon and text side-by-side
+    alignItems: 'center', // Vertically center the items
+    marginBottom: 1, // Space between content and button
+  },
+  checkinIcon: {
+    width: 22, // Smaller width for the icon
+    height: 22, // Smaller height for the icon
+    marginRight: 6, // Space between icon and texte between icon and text
+  },
+  notificationText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  proceedButton: {
+    backgroundColor: '#000',
+    padding: 10,
+    borderRadius: 8,
+    width: '100%', // Make button full width
+    alignItems: 'center', // Center text in the button
+  },
+  proceedButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    textAlign: 'center',
+    fontSize: 10,
   },
   bottomNav: {
     position: 'absolute',
@@ -687,7 +779,9 @@ const styles = StyleSheet.create({
     marginRight: 10,
     padding: 10,
     backgroundColor: '#fff',
-    borderRadius: 5,
+    borderColor: '#000',
+    borderWidth: 1,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },

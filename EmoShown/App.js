@@ -7,6 +7,8 @@ import { HomeScreen } from './JS/HomeScreen';
 import { MoodJournalScreen } from './JS/MoodJournalScreen';
 import { MoodJournalHistoryScreen } from './JS/MoodJournalHistoryScreen';
 import { AnalysisScreen } from './JS/AnalysisScreen';
+import { QuestionnaireScreen } from './JS/QuestionnaireScreen';
+
 
 const Stack = createStackNavigator();
 
@@ -20,6 +22,7 @@ export default function App() {
         <Stack.Screen name="MoodJournal" component={MoodJournalScreen} />
         <Stack.Screen name="MoodJournalHistory" component={MoodJournalHistoryScreen} />
         <Stack.Screen name="Analysis" component={AnalysisScreen} />
+        <Stack.Screen name="Questionnaire" component={QuestionnaireScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
