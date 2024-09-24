@@ -334,33 +334,33 @@ const handleWeeklyCheckIn = async () => {
         <Image source={{ uri: imageUri }} style={styles.image} />
       )}
 
-      {/* Save Button*/}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 5, alignSelf: 'flex-end', }}>
-        <TouchableOpacity style={styles.saveButton} onPress={saveJournalToFirebase}>
-          <Text style={styles.saveButtonText}>Save</Text>
-        </TouchableOpacity>
+<View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 5 }}>
+  {/* Weekly Check-In Notification */}
+  {weeklyCheckInVisible && (
+    <View style={styles.notificationContainer}>
+      <View style={styles.notificationContent}>
+        <Image 
+          source={require('../assets/notification.png')} 
+          style={styles.checkinIcon} 
+        />
+        <Text style={styles.notificationText}>
+          It's time for your weekly check-in!
+        </Text>
       </View>
-      
-      {/* Weekly Check-In Notification */}
-{weeklyCheckInVisible && (
-  <View style={styles.notificationContainer}>
-    <View style={styles.notificationContent}>
-      <Image 
-        source={require('../assets/notification.png')} 
-        style={styles.checkinIcon} 
-      />
-      <Text style={styles.notificationText}>
-        It's time for your weekly check-in!
-      </Text>
+      <TouchableOpacity style={styles.proceedButton} onPress={handleWeeklyCheckIn}>
+        <Text style={styles.proceedButtonText}>
+          Would you like to proceed?
+        </Text>
+      </TouchableOpacity>
     </View>
-    <TouchableOpacity style={styles.proceedButton} onPress={handleWeeklyCheckIn}>
-      <Text style={styles.proceedButtonText}>
-        Would you like to proceed?
-      </Text>
-    </TouchableOpacity>
-  </View>
+  )}
 
-)}
+  {/* Save Button */}
+  <TouchableOpacity style={styles.saveButton} onPress={saveJournalToFirebase}>
+    <Text style={styles.saveButtonText}>Save</Text>
+  </TouchableOpacity>
+</View>
+
 {/*
 {sentimentResult && (
   <View style={styles.sentimentContainer}>
@@ -704,30 +704,34 @@ const styles = StyleSheet.create({
     height: 28,
   },
   saveButton: {
-    backgroundColor: '#fff',
+    backgroundColor: '#000',
     paddingVertical: 10,
     paddingHorizontal: 10,
     borderRadius: 5,
     alignItems: 'center',
-    borderColor: '#000',
+    borderColor: '#fff',
     borderWidth: 1,
     borderRadius: 8,
+    marginLeft: 20, // Add this to create space between save button and notification
+    width: 80,  // Set the specific width of the button (adjust this as needed)
+    height: 40,  // Set the specific height of the button (adjust this as needed)
   },
   saveButtonText: {
-    color: '#000',
+    color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
   },
   notificationContainer: {
-    padding: 10, // Reduce padding to make the container smaller
-    borderColor: '#000',
-    borderWidth: 1,
-    borderRadius: 8,
-    backgroundColor: '#fff',
-    marginBottom: 8, // Reduce space between notifications
-    width: '60%',
-    alignSelf: 'flex-start', // Align container to the left
-  },
+  padding: 10,
+  borderColor: '#000',
+  borderWidth: 1,
+  borderRadius: 8,
+  backgroundColor: '#fff',
+  marginBottom: 8,
+  width: '60%',
+  alignSelf: 'flex-start',
+  marginRight: 20, // Add this to create space between notification and save button
+},
   notificationContent: {
     flexDirection: 'row', // Place icon and text side-by-side
     alignItems: 'center', // Vertically center the items
