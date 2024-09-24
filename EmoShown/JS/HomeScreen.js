@@ -49,7 +49,7 @@ export function HomeScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <Text style={styles.date}>{currentDate}</Text>
-      <Text style={styles.title}>Welcome, {username}!</Text>
+      <Text style={styles.title}>Welcome to EmoShown!</Text>
       <View style={styles.quoteContainer}>
         <Text style={styles.quote}>
           "When I talk to myself as I would a friend, I see all my best qualities and I allow myself to shine."
