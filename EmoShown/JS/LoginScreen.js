@@ -43,9 +43,9 @@ export function LoginScreen({ navigation }) {
       <TouchableOpacity onPress={() => navigation.navigate('CreateAccount')}>
         <Text style={styles.link}>Don't have an account? Sign Up</Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => {}}>
-        <Text style={styles.forgotLink}>Forgot Password?</Text>
-      </TouchableOpacity>
+      {/* <TouchableOpacity onPress={() => {}}>
+  <Text style={styles.forgotLink}>Forgot Password?</Text>
+</TouchableOpacity> */}
     </View>
   );
 }
@@ -58,16 +58,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   title: {
+    color: '#333333',
     fontSize: 32,
     fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
+    marginBottom: 100,
+    textAlign: 'left',
   },
   input: {
     height: 50,
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
+    borderColor: '#000',
+    borderWidth: 1,
+    borderRadius: 8,
     padding: 10,
     marginBottom: 10,
     fontSize: 16,

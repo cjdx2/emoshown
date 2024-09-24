@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Modal, Pressable } from 'react-native';
+import { signOut } from 'firebase/auth'; 
 import { auth, firestore } from './firebaseConfig';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { format, subDays } from 'date-fns';
