@@ -19,6 +19,7 @@ const moodImages = {
     lonely: require('../assets/negative/loneliness.png'),
     sad: require('../assets/negative/sadness.png'),
     worried: require('../assets/negative/anxiety.png'),
+    blank: require('../assets/blankemoji.png'),
 };
 
 export function AnalysisScreen({ navigation }) {
@@ -37,7 +38,7 @@ export function AnalysisScreen({ navigation }) {
           console.error('Logout Error:', error);
         }
     };
-    
+
     useEffect(() => {
         navigation.setOptions({
             headerLeft: () => null,
@@ -65,73 +66,65 @@ export function AnalysisScreen({ navigation }) {
         return () => clearInterval(intervalId);
     }, []);
 
+    // Fetch and display mood history (Last 7 Days)
     useEffect(() => {
-      const fetchMoodData = async () => {
-          const userId = auth.currentUser.uid;
-          const journalsRef = collection(firestore, 'journals');
-          const today = format(new Date(), 'MMMM d, yyyy'); // Ensure the date format matches your Firestore format
+      const fetchMoodHistory = async () => {
+          const userId = auth.currentUser.uid; // Ensure the user is authenticated
+          const moodsRef = collection(firestore, 'journals'); // Reference to the 'journals' collection
   
-          const todayQuery = query(journalsRef, where('userId', '==', userId), where('date', '==', today));
-          const todaySnapshot = await getDocs(todayQuery);
+          const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+          const today = new Date();
+          const last7DaysData = daysOfWeek.map((day, index) => {
+              const date = format(subDays(today, (index)), 'MMMM d, yyyy'); // Get dates from today back to Sunday
+              return { day, date, emotion: 'blank', sentiment: 0 }; // Initialize with blank
+          });
   
-          if (!todaySnapshot.empty) {
-              const todayData = todaySnapshot.docs[0].data();
-              setMoodToday(todayData.emotion); // Assuming you're interested in the 'emotion' field
-              setMoodProgress(todayData.sentiment ? todayData.sentiment.compound || 0 : 0); // Extract compound score
-          } else {
-              setMoodToday('neutral');
-              setMoodProgress(0);
-          }
-  
-          // Fetch mood history for the last 7 days
-          const last7DaysData = [];
-          for (let i = 6; i >= 0; i--) {
-              const date = format(subDays(new Date(), i), 'MMMM d, yyyy'); // Ensure format matches Firestore
-              const dayQuery = query(journalsRef, where('userId', '==', userId), where('date', '==', date));
+          // Fetch data for the last 7 days
+          for (let i = 0; i < last7DaysData.length; i++) {
+              const dayData = last7DaysData[i];
+              const dayQuery = query(moodsRef, where('userId', '==', userId), where('date', '==', dayData.date));
               const daySnapshot = await getDocs(dayQuery);
   
               if (!daySnapshot.empty) {
-                  const dayData = daySnapshot.docs[0].data();
-                  last7DaysData.push({
-                      day: format(subDays(new Date(), i), 'eee'), // e.g., Mon, Tue, etc.
-                      emotion: dayData.emotion || 'neutral',
-                      sentiment: dayData.sentiment ? dayData.sentiment.compound : 0, // Add sentiment score
-                  });
-              } else {
-                  last7DaysData.push({
-                      day: format(subDays(new Date(), i), 'eee'),
-                      emotion: 'neutral', // Default to neutral if no data
-                      sentiment: 0, // Default sentiment score
-                  });
+                  // Get the first document in the result
+                  const journalData = daySnapshot.docs[0].data(); 
+                  last7DaysData[i].emotion = journalData.emotion || 'blank'; // Set the emotion or keep as 'blank'
+                  last7DaysData[i].sentiment = journalData.sentiment ? journalData.sentiment.compound : 0; // Add sentiment score or 0 as default
               }
           }
   
-          setMoodHistory(last7DaysData);
-          detectAnomalies(last7DaysData);
+          setMoodHistory(last7DaysData); // Update the state with the fetched mood history
       };
   
-      fetchMoodData();
-  }, []);  
+      fetchMoodHistory();
+  }, []);
 
-  const detectAnomalies = (history) => {
-    const threshold = 0.2; // Define a threshold for mood change
-    const anomaliesDetected = [];
+    // Anomaly Detection based on the fetched mood history
+    useEffect(() => {
+      if (moodHistory.length > 0) {
+          detectAnomalies(moodHistory);
+      }
+    }, [moodHistory]); // Only run when moodHistory changes
 
-    for (let i = 1; i < history.length; i++) {
-        const currentSentiment = history[i].sentiment || 0; // Use the sentiment score
-        const previousSentiment = history[i - 1].sentiment || 0;
+    const detectAnomalies = (history) => {
+        const threshold = 0.2; // Define a threshold for mood change
+        const anomaliesDetected = [];
 
-        const change = currentSentiment - previousSentiment;
-        if (Math.abs(change) >= threshold) {
-            anomaliesDetected.push({
-                day: history[i].day,
-                change: (change * 100).toFixed(2), // Convert to percentage for better readability
-            });
+        for (let i = 1; i < history.length; i++) {
+            const currentSentiment = history[i].sentiment || 0; // Use the sentiment score
+            const previousSentiment = history[i - 1].sentiment || 0;
+
+            const change = currentSentiment - previousSentiment;
+            if (Math.abs(change) >= threshold) {
+                anomaliesDetected.push({
+                    day: history[i].day,
+                    change: (change * 100).toFixed(2), // Convert to percentage for better readability
+                });
+            }
         }
-    }
 
-    setAnomalies(anomaliesDetected); // Update the anomalies state
-};
+        setAnomalies(anomaliesDetected); // Update the anomalies state
+    };
 
     const renderMoodProgress = () => {
         const moodText = moodProgress >= 0 ? `+${moodProgress}% happier than yesterday` : `${moodProgress}% less happy than yesterday`;
@@ -145,33 +138,21 @@ export function AnalysisScreen({ navigation }) {
                 <Text style={styles.moodText}>You've been feeling <Text style={styles.moodHighlight}>{moodToday}</Text> today</Text>
                 {renderMoodProgress()}
 
+                {/* Mood History */}
                 <View style={styles.moodHistory}>
-                    {moodHistory.map((moodItem, index) => (
-                        <View key={index} style={styles.moodHistoryItem}>
-                            <Text style={styles.moodHistoryDay}>{moodItem.day}</Text>
-                            <Image 
-                                source={moodImages[moodItem.mood] || moodImages.neutral}
-                                style={styles.moodIcon} 
-                            />
-                        </View>
-                    ))}
-                </View>
-
-                <View style={styles.analysisContainer}>
-                    <View style={styles.analysisItem}>
-                        <Text style={styles.analysisLabel}>stress level</Text>
-                        <Text style={styles.analysisValue}>low</Text>
-                    </View>
-                    <View style={styles.analysisItem}>
-                        <Text style={styles.analysisLabel}>sleep quality</Text>
-                        <Text style={styles.analysisValue}>excellent</Text>
-                    </View>
-                </View>
-
-                <View style={styles.screenTimeContainer}>
-                    <Text style={styles.screenTimeLabel}>screen time</Text>
-                    <Text style={styles.screenTimeValue}>6 hrs 30 mins</Text>
-                </View>
+                  {moodHistory.map((moodItem, index) => {
+                      const isFutureDay = new Date() < new Date(moodItem.date);
+                      return (
+                          <View key={index} style={styles.moodHistoryItem}>
+                              <Text style={styles.moodHistoryDay}>{moodItem.day}</Text>
+                              <Image 
+                                  source={moodImages[moodItem.emotion] || moodImages.blank} // Use blank emoji if emotion is not found
+                                  style={[styles.moodIcon, isFutureDay && { opacity: 0.5 }]} // Reduce opacity for future days
+                              />
+                          </View>
+                      );
+                  })}
+              </View>
 
                 {/* Anomaly Detection Results */}
                 {anomalies.length > 0 && (
