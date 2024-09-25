@@ -1,42 +1,129 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, Pressable, Image, FlatList } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, Pressable, Image, FlatList, Alert } from 'react-native';
+import { getFirestore, collection, addDoc } from 'firebase/firestore'; // Firebase Firestore
+import { getAuth } from 'firebase/auth';
+import { getDoc, doc } from 'firebase/firestore'; // For fetching user profile from Firestore
 
 export const QuestionnaireScreen = ({ navigation }) => {
   const [modalVisible, setModalVisible] = useState(false);
-  const [showQuestionnaire, setShowQuestionnaire] = useState(false); // New state to toggle between views
+  const [showQuestionnaire, setShowQuestionnaire] = useState(false); 
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [responses, setResponses] = useState(Array(21).fill(-1)); // Default to -1 to check for unanswered questions
 
-  // DASS21 Questionnaire Questions
-  const questions = [
-    'I found it hard to wind down',
-    'I was aware of dryness of my mouth',
-    'I couldn’t seem to experience any positive feeling at all',
-    'I experienced breathing difficulty (e.g. excessively rapid breathing, breathlessness in the absence of physical exertion)',
-    'I found it difficult to work up the initiative to do things',
-    'I tended to over-react to situations',
-    'I experienced trembling (e.g. in the hands)',
-    'I felt that I was using a lot of nervous energy',
-    'I was worried about situations in which I might panic and make a fool of myself',
-    'I felt that I had nothing to look forward to',
-    'I found myself getting agitated',
-    'I found it difficult to relax',
-    'I felt down-hearted and blue',
-    'I was intolerant of anything that kept me from getting on with what I was doing',
-    'I felt I was close to panic',
-    'I was unable to become enthusiastic about anything',
-    'I felt I wasn’t worth much as a person',
-    'I felt that I was rather touchy',
-    'I was aware of the action of my heart in the absence of physical exertion (e.g. sense of heart rate increase, heart missing a beat)',
-    'I felt scared without any good reason',
-    'I felt that life was meaningless',
+  const db = getFirestore(); // Initialize Firestore
+
+   // DASS21 Questionnaire Questions (Depression, Anxiety, Stress categories)
+   const questions = [
+    { text: 'I found it hard to wind down', category: 'stress' },
+    { text: 'I was aware of dryness of my mouth', category: 'anxiety' },
+    { text: 'I couldn’t seem to experience any positive feeling at all', category: 'depression' },
+    { text: 'I experienced breathing difficulty', category: 'anxiety' },
+    { text: 'I found it difficult to work up the initiative to do things', category: 'depression' },
+    { text: 'I tended to over-react to situations', category: 'stress' },
+    { text: 'I experienced trembling', category: 'anxiety' },
+    { text: 'I felt that I was using a lot of nervous energy', category: 'stress' },
+    { text: 'I was worried about situations in which I might panic', category: 'anxiety' },
+    { text: 'I felt that I had nothing to look forward to', category: 'depression' },
+    { text: 'I found myself getting agitated', category: 'stress' },
+    { text: 'I found it difficult to relax', category: 'stress' },
+    { text: 'I felt down-hearted and blue', category: 'depression' },
+    { text: 'I was intolerant of anything that kept me from getting on with what I was doing', category: 'stress' },
+    { text: 'I felt I was close to panic', category: 'anxiety' },
+    { text: 'I was unable to become enthusiastic about anything', category: 'depression' },
+    { text: 'I felt I wasn’t worth much as a person', category: 'depression' },
+    { text: 'I felt that I was rather touchy', category: 'stress' },
+    { text: 'I was aware of the action of my heart in the absence of physical exertion', category: 'anxiety' },
+    { text: 'I felt scared without any good reason', category: 'anxiety' },
+    { text: 'I felt that life was meaningless', category: 'depression' },
   ];
+
+  
+  const getUserProfile = async (uid) => {
+    const userDoc = await getDoc(doc(db, 'users', uid)); // Assuming user profiles are stored in 'users' collection
+    if (userDoc.exists()) {
+      return userDoc.data(); // Returns the user's profile data
+    }
+    return null;
+  };
+  const scoreRanges = {
+    depression: [9, 13, 20, 27], // Normal, Mild, Moderate, Severe (Extremely Severe is 28+)
+    anxiety: [7, 9, 14, 19], // Normal, Mild, Moderate, Severe (Extremely Severe is 20+)
+    stress: [14, 18, 25, 33], // Normal, Mild, Moderate, Severe (Extremely Severe is 34+)
+  };
+  
+  const severityLabels = ['Normal', 'Mild', 'Moderate', 'Severe', 'Extremely Severe'];
+  
+  /// Adjust the function to multiply the final scores by 2
+  const computeSeverity = (totalScore, category) => {
+    const range = scoreRanges[category];
+    totalScore *= 2; // Multiply score by 2 once here
+    
+    if (totalScore <= range[0]) {
+      return severityLabels[0]; // Normal
+    } else if (totalScore <= range[1]) {
+      return severityLabels[1]; // Mild
+    } else if (totalScore <= range[2]) {
+      return severityLabels[2]; // Moderate
+    } else if (totalScore <= range[3]) {
+      return severityLabels[3]; // Severe
+    } else {
+      return severityLabels[4]; // Extremely Severe
+    }
+  };
+
+const saveResultsToFirebase = async (depressionScore, anxietyScore, stressScore) => {
+  const auth = getAuth();
+  const user = auth.currentUser; // Get the current authenticated user
+
+  if (user) {
+    const { uid } = user; // Extract user ID
+    const userProfile = await getUserProfile(uid); // Fetch the user's profile
+    const fullName = userProfile?.fullName || 'Anonymous'; // Fallback to 'Anonymous' if fullName is not found
+
+    // Calculate severity without multiplying the score again
+    const depressionSeverity = computeSeverity(depressionScore, 'depression');
+    const anxietySeverity = computeSeverity(anxietyScore, 'anxiety');
+    const stressSeverity = computeSeverity(stressScore, 'stress');
+
+    console.log(`Depression Severity: ${depressionSeverity}`);
+    console.log(`Anxiety Severity: ${anxietySeverity}`);
+    console.log(`Stress Severity: ${stressSeverity}`);  
+
+    try {
+      await addDoc(collection(db, 'checkins'), {
+        fullName, // Add the user's full name
+        depressionScore,
+        depressionSeverity,
+        anxietyScore,
+        anxietySeverity,
+        stressScore,
+        stressSeverity,
+        timestamp: new Date(),
+      });
+      Alert.alert("Success", "Your results have been saved.");
+    } catch (error) {
+      console.error("Error saving to Firestore: ", error);
+      Alert.alert("Error", "Failed to save your results. Please try again.");
+    }
+  } else {
+    Alert.alert("Error", "User is not logged in.");
+  }
+};
 
    // Function to go to the next slide
    const nextSlide = () => {
+    const startIndex = currentSlide * 3;
+    const currentQuestionsAnswered = responses.slice(startIndex, startIndex + 3).every(response => response !== -1);
+
+    if (!currentQuestionsAnswered) {
+      Alert.alert("Error", "Please answer all questions on this slide before proceeding.");
+      return;
+    }
+
     if (currentSlide < Math.floor(questions.length / 3)) {
       setCurrentSlide(currentSlide + 1);
     } else {
-      finishQuestionnaire(); // Finish the questionnaire if it's the last slide
+      finishQuestionnaire();
     }
   };
 
@@ -52,11 +139,26 @@ export const QuestionnaireScreen = ({ navigation }) => {
     setShowQuestionnaire(false);
   };
 
-  // Finish questionnaire and navigate to Mood Journal
-const finishQuestionnaire = () => {
-  // Here, navigate back to the Mood Journal screen
-  navigation.navigate('MoodJournal');
-  // You can also display an alert or perform any final action if needed
+   // Finish questionnaire and calculate scores
+   const finishQuestionnaire = () => {
+    if (responses.includes(-1)) {
+      Alert.alert("Error", "Please answer all the questions before finishing.");
+      return;
+    }
+
+    let depressionScore = 0, anxietyScore = 0, stressScore = 0;
+    responses.forEach((response, index) => {
+      const category = questions[index].category;
+      if (category === 'depression') depressionScore += response;
+      else if (category === 'anxiety') anxietyScore += response;
+      else if (category === 'stress') stressScore += response;
+    });
+  
+    // Save to Firebase
+  saveResultsToFirebase(depressionScore, anxietyScore, stressScore); // Scores are not multiplied again here
+
+    // Navigate back to Mood Journal
+    navigation.navigate('MoodJournal');
   alert("Thank you for completing the questionnaire!");
 };
 
@@ -125,46 +227,51 @@ const finishQuestionnaire = () => {
           data={currentQuestions}
           renderItem={({ item, index }) => (
             <View key={index} style={styles.questionContainer}>
-              <Text style={styles.questionText}>{startIndex + index + 1}. {item}</Text>
+              <Text style={styles.questionText}>{startIndex + index + 1}. {item.text}</Text>
               <View style={styles.likertScaleContainer}>
-                <TouchableOpacity style={styles.likertItem}>
-                  <Text style={styles.likertNumber}>0</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.likertItem}>
-                  <Text style={styles.likertNumber}>1</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.likertItem}>
-                  <Text style={styles.likertNumber}>2</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.likertItem}>
-                  <Text style={styles.likertNumber}>3</Text>
-                </TouchableOpacity>
+                {[0, 1, 2, 3].map(value => (
+                  <TouchableOpacity
+                    key={value}
+                    style={[
+                      styles.likertItem,
+                      responses[startIndex + index] === value ? styles.selectedLikertItem : null
+                    ]}
+                    onPress={() => {
+                      const newResponses = [...responses];
+                      newResponses[startIndex + index] = value;
+                      setResponses(newResponses);
+                    }}
+                  >
+                    <Text style={styles.likertNumber}>{value}</Text>
+                  </TouchableOpacity>
+                ))}
               </View>
             </View>
           )}
           keyExtractor={(item, index) => index.toString()}
         />
 
+{/* Navigation buttons */}
 <View style={styles.navigationButtons}>
           {currentSlide === 0 ? (
-            <TouchableOpacity style={styles.navButton} onPress={backToInstructions}>
+            <TouchableOpacity style={styles.navButton} onPress={() => setShowQuestionnaire(false)}>
               <Text style={styles.navButtonText}>Back to Instructions</Text>
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity style={styles.navButton} onPress={prevSlide}>
+            <TouchableOpacity style={styles.navButton} onPress={() => setCurrentSlide(currentSlide - 1)}>
               <Text style={styles.navButtonText}>Previous</Text>
             </TouchableOpacity>
           )}
 
-          {currentSlide < Math.floor(questions.length / 3) - 1 ? (
-          <TouchableOpacity style={styles.navButton} onPress={nextSlide}>
-            <Text style={styles.navButtonText}>Next</Text>
+          <TouchableOpacity style={styles.navButton} onPress={() => {
+            if (currentSlide < Math.floor(questions.length / 3)) {
+              setCurrentSlide(currentSlide + 1);
+            } else {
+              finishQuestionnaire();
+            }
+          }}>
+            <Text style={styles.navButtonText}>{currentSlide < Math.floor(questions.length / 3) - 1 ? 'Next' : 'Finish'}</Text>
           </TouchableOpacity>
-        ) : (
-            <TouchableOpacity style={styles.navButton} onPress={finishQuestionnaire}>
-              <Text style={styles.navButtonText}>Finish</Text>
-            </TouchableOpacity>
-          )}
         </View>
       </View>
     );
@@ -173,7 +280,18 @@ const finishQuestionnaire = () => {
 
   return (
     <View style={styles.container}>
-      {showQuestionnaire ? renderQuestionnaire() : renderInstructions()}
+      {showQuestionnaire ? renderQuestionnaire() : (
+        <View style={styles.container}>
+          <Text style={styles.title}>DASS21 Questionnaire</Text>
+          <Text style={styles.instructions}>
+            Please read each statement and choose a number (0, 1, 2, or 3) indicating how much the statement applied to you over the past week.
+          </Text>
+          <TouchableOpacity style={styles.nextButton} onPress={() => setShowQuestionnaire(true)}>
+            <Text style={styles.nextButtonText}>Proceed</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    
 
       {/* Bottom Navigation Icons */}
       <View style={styles.bottomNav}>
@@ -233,7 +351,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     width: '100%',
-
   },
    questionText: {
     fontSize: 18,
@@ -261,10 +378,15 @@ const styles = StyleSheet.create({
   likertItem: {
     alignItems: 'center',
     flex: 1,
+    padding: 10,
   },
   likertNumber: {
     fontSize: 24,
     fontWeight: 'bold',
+  },
+  selectedLikertItem: {
+    backgroundColor: '#d3d3d3', // Highlight selected item
+    borderRadius: 10,
   },
   navigationButtons: {
     flexDirection: 'row',
