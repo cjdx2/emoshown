@@ -58,6 +58,7 @@ export function MoodJournalScreen({ navigation }) {
 
 // Set weekly check-in visibility
 useEffect(() => {
+  
   // Assuming you store the last check-in date in Firestore or AsyncStorage, retrieve it here
   const checkLastCheckIn = async () => {
     try {
@@ -65,20 +66,29 @@ useEffect(() => {
       const lastCheckInDoc = await getDoc(doc(firestore, 'checkins', userId));
       
       if (lastCheckInDoc.exists()) {
-        const lastCheckIn = lastCheckInDoc.data().lastCheckIn.toDate();
-        const currentDate = new Date();
-
-        // Check if the current date is 7 days after the last check-in
-        const diffDays = Math.ceil((currentDate - lastCheckIn) / (1000 * 60 * 60 * 24));
-        setWeeklyCheckInVisible(diffDays >= 0);
+        const lastCheckInData = lastCheckInDoc.data(); // Get the document data
+  
+        // Check if lastCheckIn exists before calling toDate()
+        if (lastCheckInData?.lastCheckIn) {
+          const lastCheckIn = lastCheckInData.lastCheckIn.toDate(); // Convert Firestore timestamp to Date
+          const currentDate = new Date();
+  
+          // Check if the current date is 7 days after the last check-in
+          const diffDays = Math.ceil((currentDate - lastCheckIn) / (1000 * 60 * 60 * 24));
+          setWeeklyCheckInVisible(diffDays >= 0); // Show check-in if 7 or more days have passed
+        } else {
+          // If no lastCheckIn field exists, show the notification
+          setWeeklyCheckInVisible(true);
+        }
       } else {
-        // If no check-in record exists, show the notification
+        // If no document exists, show the notification
         setWeeklyCheckInVisible(true);
       }
     } catch (error) {
       console.error('Error checking last check-in date:', error);
     }
   };
+  
 
   checkLastCheckIn();
 }, []);

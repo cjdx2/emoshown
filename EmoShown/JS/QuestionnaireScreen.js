@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, Pressable, Image, FlatList, Alert } from 'react-native';
-import { getFirestore, collection, addDoc } from 'firebase/firestore'; // Firebase Firestore
+import { getFirestore, collection, addDoc, setDoc } from 'firebase/firestore'; // Firebase Firestore
 import { getAuth } from 'firebase/auth';
 import { getDoc, doc } from 'firebase/firestore'; // For fetching user profile from Firestore
 
@@ -89,7 +89,9 @@ const saveResultsToFirebase = async (depressionScore, anxietyScore, stressScore)
     console.log(`Stress Severity: ${stressSeverity}`);  
 
     try {
-      await addDoc(collection(db, 'checkins'), {
+      // Use `addDoc` to create a new document with a unique ID
+      await addDoc(collection(db, 'checkins'), { 
+        uid, // Add the user's UID
         fullName, // Add the user's full name
         depressionScore,
         depressionSeverity,
@@ -97,7 +99,7 @@ const saveResultsToFirebase = async (depressionScore, anxietyScore, stressScore)
         anxietySeverity,
         stressScore,
         stressSeverity,
-        timestamp: new Date(),
+        timestamp: new Date(), // Store the current timestamp for when the check-in was completed
       });
       Alert.alert("Success", "Your results have been saved.");
     } catch (error) {
@@ -108,6 +110,7 @@ const saveResultsToFirebase = async (depressionScore, anxietyScore, stressScore)
     Alert.alert("Error", "User is not logged in.");
   }
 };
+
 
    // Function to go to the next slide
    const nextSlide = () => {
@@ -144,8 +147,10 @@ const saveResultsToFirebase = async (depressionScore, anxietyScore, stressScore)
       Alert.alert("Error", "Please answer all the questions before finishing.");
       return;
     }
-
+  
     let depressionScore = 0, anxietyScore = 0, stressScore = 0;
+  
+    // Calculate the raw scores
     responses.forEach((response, index) => {
       const category = questions[index].category;
       if (category === 'depression') depressionScore += response;
@@ -153,13 +158,18 @@ const saveResultsToFirebase = async (depressionScore, anxietyScore, stressScore)
       else if (category === 'stress') stressScore += response;
     });
   
+    // Multiply each score by 2 as required by the DASS-21 scoring method
+    depressionScore *= 2;
+    anxietyScore *= 2;
+    stressScore *= 2;
+  
     // Save to Firebase
-  saveResultsToFirebase(depressionScore, anxietyScore, stressScore); // Scores are not multiplied again here
-
+    saveResultsToFirebase(depressionScore, anxietyScore, stressScore);
+  
     // Navigate back to Mood Journal
     navigation.navigate('MoodJournal');
-  alert("Thank you for completing the questionnaire!");
-};
+    alert("Thank you for completing the questionnaire!");
+  };
 
 
   useEffect(() => {
