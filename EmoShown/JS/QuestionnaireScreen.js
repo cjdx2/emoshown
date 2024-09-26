@@ -53,23 +53,22 @@ export const QuestionnaireScreen = ({ navigation }) => {
   
   const severityLabels = ['Normal', 'Mild', 'Moderate', 'Severe', 'Extremely Severe'];
   
-  /// Adjust the function to multiply the final scores by 2
-  const computeSeverity = (totalScore, category) => {
-    const range = scoreRanges[category];
-    totalScore *= 2; // Multiply score by 2 once here
+  // If the scores are already multiplied elsewhere, remove the multiplication by 2
+const computeSeverity = (totalScore, category) => {
+  const range = scoreRanges[category];
     
-    if (totalScore <= range[0]) {
-      return severityLabels[0]; // Normal
-    } else if (totalScore <= range[1]) {
-      return severityLabels[1]; // Mild
-    } else if (totalScore <= range[2]) {
-      return severityLabels[2]; // Moderate
-    } else if (totalScore <= range[3]) {
-      return severityLabels[3]; // Severe
-    } else {
-      return severityLabels[4]; // Extremely Severe
-    }
-  };
+  if (totalScore <= range[0]) {
+    return severityLabels[0]; // Normal
+  } else if (totalScore <= range[1]) {
+    return severityLabels[1]; // Mild
+  } else if (totalScore <= range[2]) {
+    return severityLabels[2]; // Moderate
+  } else if (totalScore <= range[3]) {
+    return severityLabels[3]; // Severe
+  } else {
+    return severityLabels[4]; // Extremely Severe
+  }
+};
 
 const saveResultsToFirebase = async (depressionScore, anxietyScore, stressScore) => {
   const auth = getAuth();
@@ -263,15 +262,21 @@ const saveResultsToFirebase = async (depressionScore, anxietyScore, stressScore)
             </TouchableOpacity>
           )}
 
-          <TouchableOpacity style={styles.navButton} onPress={() => {
-            if (currentSlide < Math.floor(questions.length / 3)) {
-              setCurrentSlide(currentSlide + 1);
-            } else {
-              finishQuestionnaire();
-            }
-          }}>
-            <Text style={styles.navButtonText}>{currentSlide < Math.floor(questions.length / 3) - 1 ? 'Next' : 'Finish'}</Text>
-          </TouchableOpacity>
+<TouchableOpacity 
+  style={styles.navButton} 
+  onPress={() => {
+    if (currentSlide < Math.ceil(questions.length / 3) - 1) {  // Adjusted condition
+      setCurrentSlide(currentSlide + 1);
+    } else {
+      finishQuestionnaire();  // Calls the function when it's the last slide
+    }
+  }}>
+  {/* Change the button text to 'Finish' when on the last slide */}
+  <Text style={styles.navButtonText}>
+    {currentSlide < Math.ceil(questions.length / 3) - 1 ? 'Next' : 'Finish'}
+  </Text>
+</TouchableOpacity>
+
         </View>
       </View>
     );
