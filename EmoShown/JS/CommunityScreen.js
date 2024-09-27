@@ -40,28 +40,28 @@ export const CommunityScreen = ({ navigation }) => {
         {/* Hotline Section */}
         <View style={styles.supportSection}>
           <Text style={styles.sectionTitle}>Hotlines</Text>
-          <TouchableOpacity onPress={() => handleCallPress('123456789')}>
-            <Text style={styles.hotlineText}>National Helpline: 123-456-789</Text>
+          <TouchableOpacity onPress={() => handleCallPress('(02) 8804-4673')}>
+            <Text style={styles.hotlineText}>HOPELINE: (02) 8804-4673</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => handleCallPress('911')}>
-            <Text style={styles.hotlineText}>Emergency Services: 911</Text>
+          <TouchableOpacity onPress={() => handleCallPress('1553')}>
+            <Text style={styles.hotlineText}>NCMH Crisis Hotline: 1553</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => handleCallPress('1800273TALK')}>
-            <Text style={styles.hotlineText}>Mental Health Support: 1-800-273-TALK</Text>
+          <TouchableOpacity onPress={() => handleCallPress('+63288937603')}>
+            <Text style={styles.hotlineText}>In Touch: Crisis Line: +63288937603</Text>
           </TouchableOpacity>
         </View>
 
         {/* Website Links Section */}
         <View style={styles.supportSection}>
           <Text style={styles.sectionTitle}>Helpful Links</Text>
-          <TouchableOpacity onPress={() => handleLinkPress('https://www.mentalhealth.gov')}>
-            <Text style={styles.linkText}>Mental Health Resources</Text>
+          <TouchableOpacity onPress={() => handleLinkPress('https://www.pmha.org.ph')}>
+            <Text style={styles.linkText}>Philippine Mental Health Association, Inc.</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => handleLinkPress('https://www.suicidepreventionlifeline.org')}>
-            <Text style={styles.linkText}>Suicide Prevention Lifeline</Text>
+          <TouchableOpacity onPress={() => handleLinkPress('https://ncmh.gov.ph')}>
+            <Text style={styles.linkText}>National Center for Mental Health</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => handleLinkPress('https://www.samhsa.gov')}>
-            <Text style={styles.linkText}>Substance Abuse Help</Text>
+          <TouchableOpacity onPress={() => handleLinkPress('https://in-touch.org')}>
+            <Text style={styles.linkText}>In Touch Community Services</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -87,41 +87,69 @@ export const CommunityScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1, padding: 20, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff',
+    flex: 1, 
+    padding: 20, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    backgroundColor: '#fff',
   },
   date: {
-    fontSize: 18, marginBottom: 10, textAlign: 'center',
+    fontSize: 18, 
+    marginBottom: 10, 
+    textAlign: 'center',
   },
   title: {
-    fontSize: 28, fontWeight: 'bold', marginBottom: 20, textAlign: 'center',
+    fontSize: 28, 
+    fontWeight: 'bold', 
+    marginBottom: 20, 
+    textAlign: 'center',
   },
-  supportContainer: {
+    supportContainer: {
     marginVertical: 20,
   },
   supportText: {
-    fontSize: 16, marginBottom: 20, textAlign: 'center',
+    fontSize: 16, 
+    marginBottom: 20, 
+    textAlign: 'center',
   },
   supportSection: {
     marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 20, fontWeight: 'bold', marginBottom: 10,
+    fontSize: 20, 
+    fontWeight: 'bold', 
+    marginBottom: 10,
   },
   hotlineText: {
-    fontSize: 16, marginBottom: 5, color: 'blue', textDecorationLine: 'underline', // Make text look clickable
+    fontSize: 16, 
+    marginBottom: 5, 
+    color: 'blue', 
+    textDecorationLine: 'underline', // Make text look clickable
   },
   linkText: {
-    fontSize: 16, color: 'blue', marginBottom: 5, textDecorationLine: 'underline',
+    fontSize: 16, 
+    color: 'blue', 
+    marginBottom: 5, 
+    textDecorationLine: 'underline',
   },
   bottomNav: {
-    position: 'absolute', bottom: 0, flexDirection: 'row', justifyContent: 'space-around', width: '100%',
-    padding: 10, backgroundColor: '#fff', borderTopWidth: 1, borderColor: '#ddd',
+    position: 'absolute', 
+    bottom: 0, 
+    flexDirection: 'row', 
+    justifyContent: 'space-around', 
+    width: '100%',
+    padding: 10, 
+    backgroundColor: '#fff', 
+    borderTopWidth: 1, 
+    borderColor: '#ddd',
   },
   iconButton: {
-    flex: 1, alignItems: 'center',
+    flex: 1, 
+    alignItems: 'center',
   },
   icon: {
-    width: 30, height: 30,
+    width: 30, 
+    height: 30,
   },
 });
 
