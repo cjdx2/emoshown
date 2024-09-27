@@ -1,8 +1,11 @@
+// QuestionnaireScreen.js
+import { ProgressBar } from 'react-native-paper';
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, Pressable, Image, FlatList, Alert } from 'react-native';
 import { getFirestore, collection, addDoc, setDoc } from 'firebase/firestore'; // Firebase Firestore
 import { getAuth } from 'firebase/auth';
 import { getDoc, doc } from 'firebase/firestore'; // For fetching user profile from Firestore
+
 
 export const QuestionnaireScreen = ({ navigation }) => {
   const [modalVisible, setModalVisible] = useState(false);
@@ -87,6 +90,7 @@ const saveResultsToFirebase = async (depressionScore, anxietyScore, stressScore)
     console.log(`Depression Severity: ${depressionSeverity}`);
     console.log(`Anxiety Severity: ${anxietySeverity}`);
     console.log(`Stress Severity: ${stressSeverity}`);  
+   
 
     try {
       // Use `addDoc` to create a new document with a unique ID
@@ -113,28 +117,27 @@ const saveResultsToFirebase = async (depressionScore, anxietyScore, stressScore)
 
 
    // Function to go to the next slide
-   const nextSlide = () => {
-    const startIndex = currentSlide * 3;
-    const currentQuestionsAnswered = responses.slice(startIndex, startIndex + 3).every(response => response !== -1);
+const nextSlide = () => {
+  const currentQuestionsAnswered = responses[currentSlide] !== -1;
 
-    if (!currentQuestionsAnswered) {
-      Alert.alert("Error", "Please answer all questions on this slide before proceeding.");
-      return;
-    }
+  if (!currentQuestionsAnswered) {
+    Alert.alert("Error", "Please answer the question before proceeding.");
+    return;
+  }
 
-    if (currentSlide < Math.floor(questions.length / 3)) {
-      setCurrentSlide(currentSlide + 1);
-    } else {
-      finishQuestionnaire();
-    }
-  };
+  if (currentSlide < questions.length - 1) {
+    setCurrentSlide(currentSlide + 1);
+  } else {
+    finishQuestionnaire();
+  }
+};
 
-  // Function to go to the previous slide
-  const prevSlide = () => {
-    if (currentSlide > 0) {
-      setCurrentSlide(currentSlide - 1);
-    }
-  };
+// Function to go to the previous slide
+const prevSlide = () => {
+  if (currentSlide > 0) {
+    setCurrentSlide(currentSlide - 1);
+  }
+};
 
   // Return to instructions
   const backToInstructions = () => {
@@ -225,73 +228,66 @@ const saveResultsToFirebase = async (depressionScore, anxietyScore, stressScore)
   );
 
   const renderQuestionnaire = () => {
-    const startIndex = currentSlide * 3;
-    const currentQuestions = questions.slice(startIndex, startIndex + 3);
-
+    const currentQuestion = questions[currentSlide]; // Only one question per slide
+    const progress = (currentSlide + 1) / questions.length; // Calculate progress
+  
+    console.log(`Current Slide: ${currentSlide + 1}, Progress: ${progress}`);
+  
     return (
       <View style={styles.container}>
         <Text style={styles.title}>DASS21 Questionnaire</Text>
+  
+        {/* Progress Bar Container */}
+        <View style={styles.progressBarContainer}>
+          <ProgressBar progress={progress} color="#000" style={styles.progressBar} />
+        </View>
 
-        <FlatList
-          data={currentQuestions}
-          renderItem={({ item, index }) => (
-            <View key={index} style={styles.questionContainer}>
-              <Text style={styles.questionText}>{startIndex + index + 1}. {item.text}</Text>
-              <View style={styles.likertScaleContainer}>
-                {[0, 1, 2, 3].map(value => (
-                  <TouchableOpacity
-                    key={value}
-                    style={[
-                      styles.likertItem,
-                      responses[startIndex + index] === value ? styles.selectedLikertItem : null
-                    ]}
-                    onPress={() => {
-                      const newResponses = [...responses];
-                      newResponses[startIndex + index] = value;
-                      setResponses(newResponses);
-                    }}
-                  >
-                    <Text style={styles.likertNumber}>{value}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          )}
-          keyExtractor={(item, index) => index.toString()}
-        />
+       <View style={styles.questionContainer}>
+        <Text style={styles.questionText}>{currentSlide + 1}. {currentQuestion.text}</Text>
+        <View style={styles.likertScaleContainer}>
+          {[0, 1, 2, 3].map(value => (
+            <TouchableOpacity
+              key={value}
+              style={[
+                styles.likertItem,
+                responses[currentSlide] === value ? styles.selectedLikertItem : null
+              ]}
+              onPress={() => {
+                const newResponses = [...responses];
+                newResponses[currentSlide] = value;
+                setResponses(newResponses);
+              }}
+            >
+              <Text style={styles.likertNumber}>{value}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+      
 
 {/* Navigation buttons */}
 <View style={styles.navigationButtons}>
-          {currentSlide === 0 ? (
-            <TouchableOpacity style={styles.navButton} onPress={() => setShowQuestionnaire(false)}>
-              <Text style={styles.navButtonText}>Back to Instructions</Text>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity style={styles.navButton} onPress={() => setCurrentSlide(currentSlide - 1)}>
-              <Text style={styles.navButtonText}>Previous</Text>
-            </TouchableOpacity>
-          )}
+        {currentSlide === 0 ? (
+          <TouchableOpacity style={styles.navButton} onPress={() => setShowQuestionnaire(false)}>
+            <Text style={styles.navButtonText}>Back to Instructions</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity style={styles.navButton} onPress={prevSlide}>
+            <Text style={styles.navButtonText}>Previous</Text>
+          </TouchableOpacity>
+        )}
 
-<TouchableOpacity 
-  style={styles.navButton} 
-  onPress={() => {
-    if (currentSlide < Math.ceil(questions.length / 3) - 1) {  // Adjusted condition
-      setCurrentSlide(currentSlide + 1);
-    } else {
-      finishQuestionnaire();  // Calls the function when it's the last slide
-    }
-  }}>
-  {/* Change the button text to 'Finish' when on the last slide */}
-  <Text style={styles.navButtonText}>
-    {currentSlide < Math.ceil(questions.length / 3) - 1 ? 'Next' : 'Finish'}
-  </Text>
-</TouchableOpacity>
-
-        </View>
+        <TouchableOpacity 
+          style={styles.navButton} 
+          onPress={nextSlide}>
+          <Text style={styles.navButtonText}>
+            {currentSlide < questions.length - 1 ? 'Next' : 'Finish'}
+          </Text>
+        </TouchableOpacity>
       </View>
-    );
-  };
-
+    </View>
+  );
+};
 
   return (
     <View style={styles.container}>
@@ -352,10 +348,13 @@ const saveResultsToFirebase = async (depressionScore, anxietyScore, stressScore)
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'flex-start', // Start from top
+    alignItems: 'stretch', // Allow children to stretch horizontally
     backgroundColor: '#fff',
     padding: 20,
+  },
+  progressBar: {
+    height: '100%', // Fill the container's height
   },
   questionContainer: {
     backgroundColor: '#fff',
@@ -373,10 +372,18 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 10,
+  },
+  progressBarContainer: {
+    backgroundColor: '#e0e0e0', // Light gray background for contrast
+    borderRadius: 5,
+    overflow: 'hidden', // Ensure the ProgressBar doesn't spill out
+    height: 15, // Increased height for better visibility
+    width: '100%', // Full width
+    marginVertical: 10,
   },
   instructions: {
     fontSize: 16,

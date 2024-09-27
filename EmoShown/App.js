@@ -9,6 +9,7 @@ import { MoodJournalHistoryScreen } from './JS/MoodJournalHistoryScreen';
 import { AnalysisScreen } from './JS/AnalysisScreen';
 import { QuestionnaireScreen } from './JS/QuestionnaireScreen';
 import { IntroductionScreen } from './JS/IntroductionScreen';
+import { Provider as PaperProvider } from 'react-native-paper';
 // import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Stack = createStackNavigator();
@@ -31,6 +32,7 @@ export default function App() {
   */
 
   return (
+    <PaperProvider> 
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Introduction">
         <Stack.Screen name="EmoShown" component={IntroductionScreen} />
@@ -43,5 +45,6 @@ export default function App() {
         <Stack.Screen name="Questionnaire" component={QuestionnaireScreen} />
       </Stack.Navigator>
     </NavigationContainer>
+    </PaperProvider>
   );
 }
