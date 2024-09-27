@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Modal, Pre
 import { signOut } from 'firebase/auth'; 
 import { auth, firestore } from './firebaseConfig';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import { format, subDays } from 'date-fns';
+import { format, subDays, startOfDay } from 'date-fns';
 
 // Predefine a mapping for mood images
 const moodImages = {
@@ -69,61 +69,85 @@ export function AnalysisScreen({ navigation }) {
     // Fetch and display mood history (Last 7 Days)
     useEffect(() => {
       const fetchMoodHistory = async () => {
-          const userId = auth.currentUser.uid; // Ensure the user is authenticated
-          const moodsRef = collection(firestore, 'journals'); // Reference to the 'journals' collection
-  
-          const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-          const today = new Date();
-          const last7DaysData = daysOfWeek.map((day, index) => {
-              const date = format(subDays(today, (index)), 'MMMM d, yyyy'); // Get dates from today back to Sunday
-              return { day, date, emotion: 'blank', sentiment: 0 }; // Initialize with blank
-          });
-  
-          // Fetch data for the last 7 days
-          for (let i = 0; i < last7DaysData.length; i++) {
-              const dayData = last7DaysData[i];
-              const dayQuery = query(moodsRef, where('userId', '==', userId), where('date', '==', dayData.date));
-              const daySnapshot = await getDocs(dayQuery);
-  
-              if (!daySnapshot.empty) {
-                  // Get the first document in the result
-                  const journalData = daySnapshot.docs[0].data(); 
-                  last7DaysData[i].emotion = journalData.emotion || 'blank'; // Set the emotion or keep as 'blank'
-                  last7DaysData[i].sentiment = journalData.sentiment ? journalData.sentiment.compound : 0; // Add sentiment score or 0 as default
-              }
+        const userId = auth.currentUser.uid;
+        const moodsRef = collection(firestore, 'journals');
+        
+        const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const today = startOfDay(new Date());
+        let last7DaysData = [];
+    
+        for (let i = 0; i < 7; i++) {
+          const day = subDays(today, i);
+          const dayFormatted = format(day, 'MMMM d, yyyy');
+    
+          const dayQuery = query(
+            moodsRef,
+            where('userId', '==', userId),
+            where('date', '==', dayFormatted)
+          );
+          const daySnapshot = await getDocs(dayQuery);
+    
+          let emotion = 'blank';
+          let sentiment = 0;
+    
+          if (!daySnapshot.empty) {
+            const journalData = daySnapshot.docs[0].data();
+            emotion = journalData.emotion || 'blank';
+            sentiment = journalData.sentiment ? journalData.sentiment.compound : 0;
           }
-  
-          setMoodHistory(last7DaysData); // Update the state with the fetched mood history
+    
+          const dayOfWeek = format(day, 'E');
+    
+          last7DaysData.push({
+            day: dayOfWeek,
+            date: dayFormatted,
+            emotion: emotion,
+            sentiment: sentiment
+          });
+        }
+    
+        const sortedData = last7DaysData.sort((a, b) => {
+          return daysOfWeek.indexOf(a.day) - daysOfWeek.indexOf(b.day);
+        });
+    
+        setMoodHistory(sortedData);
       };
-  
+    
       fetchMoodHistory();
-  }, []);
+    }, []);        
 
     // Anomaly Detection based on the fetched mood history
     useEffect(() => {
       if (moodHistory.length > 0) {
-          detectAnomalies(moodHistory);
+        // Standardize date format to ensure proper filtering of future dates
+        const today = new Date();
+        const filteredHistory = moodHistory.filter(item => {
+          const itemDate = new Date(item.date);  // Parse the date from the history
+          return itemDate <= today;  // Only include past or present days
+        });
+
+        detectAnomalies(filteredHistory);  // Pass the filtered history
       }
-    }, [moodHistory]); // Only run when moodHistory changes
+    }, [moodHistory]);
 
     const detectAnomalies = (history) => {
-        const threshold = 0.2; // Define a threshold for mood change
-        const anomaliesDetected = [];
+      const threshold = 0.2;
+      const anomaliesDetected = [];
 
-        for (let i = 1; i < history.length; i++) {
-            const currentSentiment = history[i].sentiment || 0; // Use the sentiment score
-            const previousSentiment = history[i - 1].sentiment || 0;
+      for (let i = 1; i < history.length; i++) {
+        const currentSentiment = history[i].sentiment || 0;
+        const previousSentiment = history[i - 1].sentiment || 0;
 
-            const change = currentSentiment - previousSentiment;
-            if (Math.abs(change) >= threshold) {
-                anomaliesDetected.push({
-                    day: history[i].day,
-                    change: (change * 100).toFixed(2), // Convert to percentage for better readability
-                });
-            }
+        const change = currentSentiment - previousSentiment;
+        if (Math.abs(change) >= threshold) {
+          anomaliesDetected.push({
+            day: history[i].day,
+            change: (change * 100).toFixed(2),  // Change to percentage format
+          });
         }
+      }
 
-        setAnomalies(anomaliesDetected); // Update the anomalies state
+      setAnomalies(anomaliesDetected);
     };
 
     const renderMoodProgress = () => {
