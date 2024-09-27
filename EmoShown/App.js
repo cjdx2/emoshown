@@ -9,6 +9,7 @@ import { MoodJournalHistoryScreen } from './JS/MoodJournalHistoryScreen';
 import { AnalysisScreen } from './JS/AnalysisScreen';
 import { QuestionnaireScreen } from './JS/QuestionnaireScreen';
 import { IntroductionScreen } from './JS/IntroductionScreen';
+import { CommunityScreen } from './JS/CommunityScreen';
 import { Provider as PaperProvider } from 'react-native-paper';
 // import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -43,6 +44,7 @@ export default function App() {
         <Stack.Screen name="MoodJournalHistory" component={MoodJournalHistoryScreen} />
         <Stack.Screen name="Analysis" component={AnalysisScreen} />
         <Stack.Screen name="Questionnaire" component={QuestionnaireScreen} />
+        <Stack.Screen name="Community" component={CommunityScreen} />
       </Stack.Navigator>
     </NavigationContainer>
     </PaperProvider>

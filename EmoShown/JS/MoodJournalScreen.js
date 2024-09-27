@@ -37,7 +37,7 @@ export function MoodJournalScreen({ navigation }) {
     worried: require('../assets/negative/anxiety.png'),
   };
 
-  const BACKEND_URL = 'http://192.168.1.11:5000/analyze'; // pc url
+  const BACKEND_URL = 'http://192.168.1.9:5000/analyze'; // pc url
 
   useEffect(() => {
     const updateDate = () => {
@@ -400,7 +400,7 @@ const handleWeeklyCheckIn = async () => {
         <TouchableOpacity style={styles.iconButton} onPress={() => alert('Activities')}>
           <Image source={require('../assets/recommend.png')} style={styles.icon} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} onPress={() => alert('Community')}>
+        <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Community')}>
           <Image source={require('../assets/community.png')} style={styles.icon} />
         </TouchableOpacity>
       </View>
