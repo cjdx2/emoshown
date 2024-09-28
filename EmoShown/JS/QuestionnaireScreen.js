@@ -315,7 +315,7 @@ const prevSlide = () => {
         <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Home')}>
           <Image source={require('../assets/home.png')} style={styles.icon} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} onPress={() => alert('Activities')}>
+        <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Activities')}>
           <Image source={require('../assets/recommend.png')} style={styles.icon} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Community')}>
@@ -465,14 +465,14 @@ const styles = StyleSheet.create({
     height: 24,
   },
   bottomNav: {
-    position: 'absolute',
-    bottom: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    position: 'center', 
+    bottom: 0, 
+    flexDirection: 'row', 
+    justifyContent: 'space-around', 
     width: '100%',
-    padding: 10,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
+    padding: 10, 
+    backgroundColor: '#fff', 
+    borderTopWidth: 1, 
     borderColor: '#ddd',
   },
   iconButton: {

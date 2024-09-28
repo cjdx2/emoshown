@@ -85,7 +85,7 @@ export function HomeScreen({ navigation }) {
         <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Home')}>
           <Image source={require('../assets/home.png')} style={styles.icon} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} onPress={() => alert('Activities')}>
+        <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Activities')}>
           <Image source={require('../assets/recommend.png')} style={styles.icon} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Community')}>

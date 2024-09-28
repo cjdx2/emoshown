@@ -22,6 +22,7 @@
     "expo-status-bar": "~1.12.1",
     "firebase": "^10.13.1",
     "fns": "^1.0.0",
+    "ml-matrix": "^6.11.1",
     "react": "18.2.0",
     "react-native": "0.74.5",
     "react-native-image-picker": "^7.1.2",

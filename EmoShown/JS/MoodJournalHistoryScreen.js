@@ -52,13 +52,13 @@ export function MoodJournalHistoryScreen({ navigation }) {
         <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('MoodJournal')}>
           <Image source={require('../assets/dailymood.png')} style={styles.icon} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} onPress={() => alert('Analysis')}>
+        <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Analysis')}>
           <Image source={require('../assets/analysis.png')} style={styles.icon} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Home')}>
           <Image source={require('../assets/home.png')} style={styles.icon} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} onPress={() => alert('Activities')}>
+        <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Activities')}>
           <Image source={require('../assets/recommend.png')} style={styles.icon} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Community')}>

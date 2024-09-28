@@ -227,8 +227,8 @@ export function AnalysisScreen({ navigation }) {
                 <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Home')}>
                     <Image source={require('../assets/home.png')} style={styles.icon} />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.iconButton} onPress={() => alert('Activities')}>
-                    <Image source={require('../assets/recommend.png')} style={styles.icon} />
+                <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Activities')}>
+                <Image source={require('../assets/recommend.png')} style={styles.icon} />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Community')}>
           <Image source={require('../assets/community.png')} style={styles.icon} />

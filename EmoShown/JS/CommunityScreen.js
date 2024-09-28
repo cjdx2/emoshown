@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Image, ScrollView, Linking, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, Image, ScrollView, Linking, StyleSheet, Modal, Pressable } from 'react-native';
 
 export const CommunityScreen = ({ navigation }) => {
   const [currentDate, setCurrentDate] = useState('');
+  const [modalVisible, setModalVisible] = useState(false); // Added state for modal
 
   const handleLinkPress = (url) => {
     Linking.openURL(url);
@@ -28,6 +29,17 @@ export const CommunityScreen = ({ navigation }) => {
 
     return () => clearInterval(intervalId);
   }, []);
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerLeft: () => null,
+      headerRight: () => (
+        <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.menuButton}>
+          <Image source={require('../assets/menu.png')} style={styles.menuButtonImage} />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation]);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -66,6 +78,25 @@ export const CommunityScreen = ({ navigation }) => {
         </View>
       </View>
 
+      {/* Menu Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Pressable onPress={() => navigation.navigate('Login')} style={styles.modalButton}>
+              <Text style={styles.modalButtonText}>Logout</Text>
+            </Pressable>
+            <Pressable onPress={() => setModalVisible(false)} style={styles.modalButton}>
+              <Text style={styles.modalButtonText}>Close</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
       {/* Bottom Navigation */}
       <View style={styles.bottomNav}>
         <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('MoodJournal')}>
@@ -76,6 +107,9 @@ export const CommunityScreen = ({ navigation }) => {
         </TouchableOpacity>
         <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Home')}>
           <Image source={require('../assets/home.png')} style={styles.icon} />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Activities')}>
+          <Image source={require('../assets/recommend.png')} style={styles.icon} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Community')}>
           <Image source={require('../assets/community.png')} style={styles.icon} />
@@ -104,7 +138,7 @@ const styles = StyleSheet.create({
     marginBottom: 20, 
     textAlign: 'center',
   },
-    supportContainer: {
+  supportContainer: {
     marginVertical: 20,
   },
   supportText: {
@@ -151,6 +185,44 @@ const styles = StyleSheet.create({
     width: 30, 
     height: 30,
   },
+  menuButton: {
+    marginRight: 10,
+    padding: 10,
+    backgroundColor: '#fff',
+    borderColor: '#000',
+    borderWidth: 1,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  menuButtonImage: {
+    width: 24,
+    height: 24,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    width: 300,
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  modalButton: {
+    marginVertical: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: '#000',
+    borderRadius: 8,
+  },
+  modalButtonText: {
+    color: '#fff',
+    fontSize: 16,
+  },
 });
 
-export default CommunityScreen; // Ensure this is a default export
+export default CommunityScreen;
