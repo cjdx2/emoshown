@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Modal, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Modal, Pressable, FlatList, Alert } from 'react-native';
 import { signOut } from 'firebase/auth'; 
 import { auth, firestore } from './firebaseConfig';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
 import { format, subDays, startOfDay } from 'date-fns';
 
 const moodImages = {
@@ -28,6 +28,45 @@ export function AnalysisScreen({ navigation }) {
     const [moodHistory, setMoodHistory] = useState([]);
     const [modalVisible, setModalVisible] = useState(false);
     const [anomalies, setAnomalies] = useState([]);
+    const [checkins, setCheckins] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const db = getFirestore();
+
+    useEffect(() => {
+      const fetchCheckins = async () => {
+        try {
+          const user = auth.currentUser;
+          if (user) {
+            const q = query(
+              collection(db, 'checkins'),
+              where('uid', '==', user.uid)
+            );
+
+            const querySnapshot = await getDocs(q);
+            const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setCheckins(data);
+          } else {
+            Alert.alert("Error", "User is not logged in.");
+          }
+        } catch (error) {
+          console.error("Error fetching check-ins: ", error);
+          Alert.alert("Error", "Failed to fetch check-in data.");
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchCheckins();
+    }, []);
+
+    const renderItem = ({ item }) => (
+      <View style={styles.checkinContainer}>
+        <Text style={styles.checkinText}>Check-In Date: {item.timestamp.toDate().toDateString()}</Text>
+        <Text style={styles.checkinText}>Depression Severity: {item.depressionSeverity}</Text>
+        <Text style={styles.checkinText}>Anxiety Severity: {item.anxietySeverity}</Text>
+        <Text style={styles.checkinText}>Stress Severity: {item.stressSeverity}</Text>
+      </View>
+    );
 
     const handleLogout = async () => {
         try {
@@ -65,7 +104,7 @@ export function AnalysisScreen({ navigation }) {
         return () => clearInterval(intervalId);
     }, []);
 
-    // Fetch and display mood history (Last 7 Days)
+    // Fetch and display mood history
     useEffect(() => {
       const fetchMoodHistory = async () => {
         const userId = auth.currentUser.uid;
@@ -78,7 +117,6 @@ export function AnalysisScreen({ navigation }) {
         for (let i = 0; i < 7; i++) {
           const day = subDays(today, i);
           const dayFormatted = format(day, 'MMMM d, yyyy');
-    
           const dayQuery = query(
             moodsRef,
             where('userId', '==', userId),
@@ -92,9 +130,7 @@ export function AnalysisScreen({ navigation }) {
           if (!daySnapshot.empty) {
             const journalData = daySnapshot.docs[0].data();
             emotion = journalData.emotion || 'blank';
-            
-            // Extracting the compound sentiment score
-            sentiment = journalData.sentiment ? journalData.sentiment.compound : 0;
+                sentiment = journalData.sentiment ? journalData.sentiment.compound : 0;
           }
     
           const dayOfWeek = format(day, 'E');
@@ -129,7 +165,7 @@ export function AnalysisScreen({ navigation }) {
       try {
         console.log('Sending History:', history);  // Log the history object
     
-        const response = await fetch('http://192.168.1.9:5000/detect_anomalies', { // pc url
+        const response = await fetch('http://192.168.1.11:5000/detect_anomalies', { // pc url
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -151,70 +187,101 @@ export function AnalysisScreen({ navigation }) {
     };                      
 
     const renderMoodProgress = () => {
-        const moodText = moodProgress >= 0 ? `+${moodProgress}% happier than yesterday` : `${moodProgress}% less happy than yesterday`;
-        return <Text style={styles.moodProgress}>{moodText}</Text>;
-    };
+      const moodText = moodProgress >= 0 
+        ? `+${moodProgress}% happier than yesterday` 
+        : `${moodProgress}% less happy than yesterday`;
+      return <Text style={styles.moodProgress}>{moodText}</Text>;
+    };    
+  
+    const getSentimentDescription = (sentimentScore) => {
+      if (sentimentScore > 0.05) {
+          return 'positive';
+      } else if (sentimentScore < -0.05) {
+          return 'negative';
+      } else {
+          return 'neutral';
+      }
+  };
 
-    return (
-        <View style={styles.container}>
-            <ScrollView contentContainerStyle={styles.scrollContainer}>
-                <Text style={styles.date}>{currentDate}</Text>
-                <Text style={styles.moodText}>You've been feeling <Text style={styles.moodHighlight}>{moodToday}</Text> today</Text>
-                {renderMoodProgress()}
+  return (
+    <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <Text style={styles.date}>{currentDate}</Text>
+        <Text style={styles.moodText}>
+          You've been feeling <Text style={styles.moodHighlight}>{moodToday}</Text> today
+        </Text>
+        {renderMoodProgress()}
 
-                {/* Mood History */}
-                <View style={styles.moodHistory}>
-                  {moodHistory.map((moodItem, index) => {
-                      const isFutureDay = new Date() < new Date(moodItem.date);
-                      return (
-                          <View key={index} style={styles.moodHistoryItem}>
-                              <Text style={styles.moodHistoryDay}>{moodItem.day}</Text>
-                              <Image 
-                                  source={moodImages[moodItem.emotion] || moodImages.blank}
-                                  style={[styles.moodIcon, isFutureDay && { opacity: 0.5 }]}
-                              />
-                          </View>
-                      );
-                  })}
+        {/* Mood History */}
+        {moodHistory.length > 0 ? (
+          <View style={styles.moodHistory}>
+            {moodHistory.map((moodItem, index) => (
+              <View key={index} style={styles.moodHistoryItem}>
+                <Text style={styles.moodHistoryDay}>{moodItem.day}</Text>
+                <Image
+                  source={moodImages[moodItem.emotion] || moodImages.blank}
+                  style={styles.moodIcon}
+                />
               </View>
+            ))}
+          </View>
+        ) : (
+          <Text>No mood history available.</Text>
+        )}
 
-                {/* Anomaly Detection Results */}
-{anomalies.length > 0 && (
-  <View style={styles.anomalyContainer}>
-    <Text style={styles.anomalyTitle}>Anomaly Detection Results:</Text>
-    {anomalies.map((anomaly, index) => (
-      <Text key={index} style={styles.anomalyText}>
-        On {anomaly.day}, mood changed by {anomaly.change}%
-      </Text>
-    ))}
-  </View>
-)}
+        {/* Check-ins */}
+        {loading ? (
+          <Text>Loading...</Text>
+        ) : (
+          <FlatList
+            data={checkins}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.flatListContent}  // Apply specific styles to FlatList container
+          />
+        )}
 
-                {/* Back and Next Button */}
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 5, alignSelf: 'flex-end', }}>
-                    <TouchableOpacity style={styles.nextButton} onPress={() => alert('Full Details of Analysis')}>
-                        <Image source={require('../assets/rightarrow.png')} style={styles.icon} />
-                    </TouchableOpacity>
-                </View>
-            </ScrollView>
-            
-            {/* Modal for Logout */}
-            <Modal
-                animationType="slide"
-                transparent={true}
-                visible={modalVisible}
-                onRequestClose={() => setModalVisible(false)}>
-                <View style={styles.modalContainer}>
-                    <View style={styles.modalContent}>
-                        <Pressable onPress={handleLogout} style={styles.logoutButton}>
-                            <Text style={styles.logoutButtonText}>Logout</Text>
-                        </Pressable>
-                        <Pressable onPress={() => setModalVisible(false)} style={styles.closeButton}>
-                            <Text style={styles.closeButtonText}>Close</Text>
-                        </Pressable>
-                    </View>
-                </View>
-            </Modal>
+        {/* Anomaly Detection Results */}
+        {anomalies.length > 0 && (
+          <View style={styles.anomalyContainer}>
+            <Text style={styles.anomalyTitle}>Anomaly Detection Results:</Text>
+            {anomalies.map((anomaly, index) => (
+              <Text key={index} style={styles.anomalyText}>
+                On {anomaly.day}, mood changed by {anomaly.change}%
+              </Text>
+            ))}
+          </View>
+        )}
+
+        {/* Back and Next Button */}
+        <View style={styles.navigationButtons}>
+          <TouchableOpacity
+            style={styles.nextButton}
+            onPress={() => alert('Full Details of Analysis')}
+          >
+            <Image source={require('../assets/rightarrow.png')} style={styles.icon} />
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+      
+      {/* Modal for Logout */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Pressable onPress={handleLogout} style={styles.logoutButton}>
+              <Text style={styles.logoutButtonText}>Logout</Text>
+            </Pressable>
+            <Pressable onPress={() => setModalVisible(false)} style={styles.closeButton}>
+              <Text style={styles.closeButtonText}>Close</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
 
             {/* Fixed Bottom Navigation */}
             <View style={styles.bottomNav}>
@@ -227,15 +294,15 @@ export function AnalysisScreen({ navigation }) {
                 <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Home')}>
                     <Image source={require('../assets/home.png')} style={styles.icon} />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Activities')}>
-                <Image source={require('../assets/recommend.png')} style={styles.icon} />
+                <TouchableOpacity style={styles.iconButton} onPress={() => alert('Activities')}>
+                    <Image source={require('../assets/recommend.png')} style={styles.icon} />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Community')}>
           <Image source={require('../assets/community.png')} style={styles.icon} />
         </TouchableOpacity>
-            </View>
-        </View>
-    );
+      </View>
+    </View>
+  );  
 }
 
 const styles = StyleSheet.create({
@@ -246,13 +313,13 @@ const styles = StyleSheet.create({
   scrollContainer: {
     padding: 20,
     flexGrow: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
   },
   date: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 10,
-    textAlign: 'center',
+    textAlign: 'left',
   },
   moodText: {
     fontSize: 20,
@@ -397,12 +464,12 @@ const styles = StyleSheet.create({
     height: 24,
   },
   anomalyContainer: {
-        marginTop: 20,
-        padding: 10,
-        borderWidth: 1,
-        borderColor: 'red',
-        borderRadius: 5,
-    },
+    marginTop: 20,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: 'red',
+    borderRadius: 5,
+},
     anomalyTitle: {
         fontSize: 18,
         fontWeight: 'bold',
@@ -412,4 +479,15 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: 'red',
     },
+    checkinContainer: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+  },
+  checkinText: {
+    fontSize: 16,
+  },
+  flatListContent: {
+  paddingBottom: 20,
+},
 });
