@@ -15,7 +15,7 @@ firebase_admin.initialize_app(cred)
 db = firestore.client()
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for cross-origin requests
+CORS(app, resources={r"/*": {"origins": "*"}})  # You can replace "*" with the specific origin if needed
 
 # Fetch data from the 'journals' collection in Firebase
 def fetch_journals():
@@ -35,7 +35,7 @@ def preprocess_data(data):
 
     # Handling categorical 'emotion' column
     if 'emotion' in df.columns:
-        encoder = OneHotEncoder(sparse=False)
+        encoder = OneHotEncoder(sparse_output=False)  # Use sparse_output instead of sparse
         encoded_emotions = encoder.fit_transform(df[['emotion']])
         encoded_emotion_df = pd.DataFrame(encoded_emotions, columns=encoder.get_feature_names_out(['emotion']))
         df = pd.concat([df, encoded_emotion_df], axis=1)

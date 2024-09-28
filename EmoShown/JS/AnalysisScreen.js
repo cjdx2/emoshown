@@ -129,12 +129,13 @@ export function AnalysisScreen({ navigation }) {
       try {
         console.log('Sending History:', history);  // Log the history object
     
-        const response = await fetch('http://192.168.1.11:5000/detect_anomalies', { // pc url
+        const response = await fetch('http://192.168.1.9:5000/detect_anomalies', { // pc url
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(history),
+          mode: 'cors',  // Ensure CORS is explicitly used
         });
     
         if (!response.ok) {
@@ -145,7 +146,7 @@ export function AnalysisScreen({ navigation }) {
         console.log('Detected Anomalies:', data);
         setAnomalies(data);  // Assuming setAnomalies is a React state setter
       } catch (error) {
-        console.error('Error fetching anomalies:', error);
+       
       }
     };                      
 
