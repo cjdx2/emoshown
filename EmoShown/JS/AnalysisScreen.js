@@ -146,7 +146,7 @@ export function AnalysisScreen({ navigation }) {
         console.log('Detected Anomalies:', data);
         setAnomalies(data);  // Assuming setAnomalies is a React state setter
       } catch (error) {
-       
+        console.error('Error fetching anomalies:', error);
       }
     };                      
 
@@ -179,16 +179,16 @@ export function AnalysisScreen({ navigation }) {
               </View>
 
                 {/* Anomaly Detection Results */}
-                {anomalies.length > 0 && (
-                <View style={styles.anomalyContainer}>
-                  <Text style={styles.anomalyTitle}>Anomaly Detection Results:</Text>
-                  {anomalies.map((anomaly, index) => (
-                    <Text key={index} style={styles.anomalyText}>
-                      On {anomaly.day}, mood changed by {anomaly.change}%
-                    </Text>
-                  ))}
-                </View>
-              )}
+{anomalies.length > 0 && (
+  <View style={styles.anomalyContainer}>
+    <Text style={styles.anomalyTitle}>Anomaly Detection Results:</Text>
+    {anomalies.map((anomaly, index) => (
+      <Text key={index} style={styles.anomalyText}>
+        On {anomaly.day}, mood changed by {anomaly.change}%
+      </Text>
+    ))}
+  </View>
+)}
 
                 {/* Back and Next Button */}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 5, alignSelf: 'flex-end', }}>

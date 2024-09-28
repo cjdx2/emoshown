@@ -27,19 +27,35 @@ def fetch_journals():
         journal_data = doc.to_dict()
         data.append(journal_data)
 
+    print("Fetched Journals Data:", data)  # Log the fetched data
     return data
 
 # Convert emotion categories to numerical values using OneHotEncoder
 def preprocess_data(data):
+    # Create DataFrame from the input data
     df = pd.DataFrame(data)
 
-    # Handling categorical 'emotion' column
+    # Ensure 'emotion' column exists and handle missing values
     if 'emotion' in df.columns:
-        encoder = OneHotEncoder(sparse_output=False)  # Use sparse_output instead of sparse
+        df['emotion'] = df['emotion'].fillna('unknown')  # Fill missing emotions with 'unknown'
+        
+        # Initialize OneHotEncoder
+        encoder = OneHotEncoder(sparse_output=False)  # Use sparse_output=False to get a dense array
+        
+        # Fit and transform the 'emotion' column
         encoded_emotions = encoder.fit_transform(df[['emotion']])
-        encoded_emotion_df = pd.DataFrame(encoded_emotions, columns=encoder.get_feature_names_out(['emotion']))
+        
+        # Create a DataFrame with the one-hot encoded emotion values
+        encoded_emotion_df = pd.DataFrame(
+            encoded_emotions, 
+            columns=encoder.get_feature_names_out(['emotion'])
+        )
+        
+        # Concatenate the encoded emotions with the original DataFrame
         df = pd.concat([df, encoded_emotion_df], axis=1)
-        df = df.drop(columns=['emotion'])  # Drop original emotion column
+        
+        # Drop the original 'emotion' column as it's no longer needed
+        df = df.drop(columns=['emotion'])
 
     return df
 
@@ -47,44 +63,36 @@ def preprocess_data(data):
 def detect_anomalies(data):
     df = preprocess_data(data)
 
-    # Ensure the necessary columns exist
-    if 'sentiment' not in df.columns:
-        return []  # No sentiment data to analyze
+    # If the dataframe is empty or missing necessary columns
+    if df.empty or 'sentiment' not in df.columns:
+        return []  # Return an empty list, meaning no anomalies found
+
+    # Check for sufficient data points for analysis
+    if len(df) < 2:
+        return []  # Not enough data for anomaly detection
 
     # Handle missing values
-    # Fill missing sentiment values with the mean or drop rows with missing sentiment
-    if df['sentiment'].isnull().any():
-        df['sentiment'].fillna(df['sentiment'].mean(), inplace=True)  # You can choose to fill with mean or median
+    df['sentiment'] = df['sentiment'].fillna(df['sentiment'].mean())
 
-    # Drop rows where important columns are missing
-    df.dropna(subset=['timestamp'], inplace=True)  # Ensure timestamp is present
+    # Convert 'date' column to datetime (use 'date' instead of 'timestamp')
+    df['date'] = pd.to_datetime(df['date'], errors='coerce')
+    df.sort_values(by='date', inplace=True)
 
-    # Convert 'timestamp' column to datetime
-    df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce')
-
-    # Filter out future dates
-    today = datetime.now()
-    df = df[df['timestamp'] <= today]  # Keep only records with dates in the past or today
-
-    # Features for Isolation Forest (use sentiment + encoded emotion columns)
-    feature_columns = [col for col in df.columns if 'emotion' in col or col == 'sentiment']
-    features = df[feature_columns]
-
-    # Check if there are enough data points to perform anomaly detection
-    if len(features) < 2:
-        return []  # Not enough data to analyze
+    # Calculate sentiment change day-to-day
+    df['sentiment_change'] = df['sentiment'].diff().fillna(0)
 
     # Create and fit the Isolation Forest model
     model = IsolationForest(contamination=0.1)
-    model.fit(features)
-
-    # Predict anomalies
-    df['anomaly'] = model.predict(features)
+    df['anomaly'] = model.fit_predict(df[['sentiment']])
 
     # Anomalies are marked as -1
-    anomalies = df[df['anomaly'] == -1]
+    anomalies = df[df['anomaly'] == -1][['date', 'sentiment_change']]
 
-    return anomalies
+    # Convert anomalies to readable format
+    anomalies['day'] = anomalies['date'].dt.strftime('%A, %B %d, %Y')
+    anomalies['change'] = (anomalies['sentiment_change'] * 100).round(2)  # Convert change to percentage
+
+    return anomalies[['day', 'change']]
 
 @app.route('/detect_anomalies', methods=['POST'])
 def anomaly_detection_route():
@@ -95,7 +103,7 @@ def anomaly_detection_route():
         anomalies_json = anomalies.to_dict(orient='records')
         return jsonify(anomalies_json), 200
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error: {e}", flush=True)  # Ensure the error is printed to the log
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
