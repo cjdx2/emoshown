@@ -5,7 +5,6 @@ import { auth, firestore } from './firebaseConfig';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { format, subDays, startOfDay } from 'date-fns';
 
-// Predefine a mapping for mood images
 const moodImages = {
     happy: require('../assets/positive/happiness.png'),
     excited: require('../assets/positive/excitement.png'),
@@ -28,7 +27,7 @@ export function AnalysisScreen({ navigation }) {
     const [moodProgress, setMoodProgress] = useState(0);
     const [moodHistory, setMoodHistory] = useState([]);
     const [modalVisible, setModalVisible] = useState(false);
-    const [anomalies, setAnomalies] = useState([]); // State for anomalies
+    const [anomalies, setAnomalies] = useState([]);
 
     const handleLogout = async () => {
         try {
@@ -71,7 +70,7 @@ export function AnalysisScreen({ navigation }) {
       const fetchMoodHistory = async () => {
         const userId = auth.currentUser.uid;
         const moodsRef = collection(firestore, 'journals');
-        
+    
         const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
         const today = startOfDay(new Date());
         let last7DaysData = [];
@@ -93,6 +92,8 @@ export function AnalysisScreen({ navigation }) {
           if (!daySnapshot.empty) {
             const journalData = daySnapshot.docs[0].data();
             emotion = journalData.emotion || 'blank';
+            
+            // Extracting the compound sentiment score
             sentiment = journalData.sentiment ? journalData.sentiment.compound : 0;
           }
     
@@ -110,45 +111,43 @@ export function AnalysisScreen({ navigation }) {
           return daysOfWeek.indexOf(a.day) - daysOfWeek.indexOf(b.day);
         });
     
+        console.log('Fetched Mood History:', sortedData);
         setMoodHistory(sortedData);
       };
     
       fetchMoodHistory();
-    }, []);        
+    }, []);                
 
     // Anomaly Detection based on the fetched mood history
     useEffect(() => {
       if (moodHistory.length > 0) {
-        // Standardize date format to ensure proper filtering of future dates
-        const today = new Date();
-        const filteredHistory = moodHistory.filter(item => {
-          const itemDate = new Date(item.date);  // Parse the date from the history
-          return itemDate <= today;  // Only include past or present days
-        });
-
-        detectAnomalies(filteredHistory);  // Pass the filtered history
+        detectAnomalies(moodHistory);
       }
     }, [moodHistory]);
 
-    const detectAnomalies = (history) => {
-      const threshold = 0.2;
-      const anomaliesDetected = [];
-
-      for (let i = 1; i < history.length; i++) {
-        const currentSentiment = history[i].sentiment || 0;
-        const previousSentiment = history[i - 1].sentiment || 0;
-
-        const change = currentSentiment - previousSentiment;
-        if (Math.abs(change) >= threshold) {
-          anomaliesDetected.push({
-            day: history[i].day,
-            change: (change * 100).toFixed(2),  // Change to percentage format
-          });
+    const detectAnomalies = async (history) => {
+      try {
+        console.log('Sending History:', history);  // Log the history object
+    
+        const response = await fetch('http://192.168.1.11:5000/detect_anomalies', { // pc url
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(history),
+        });
+    
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);  // Catch non-200 responses
         }
+    
+        const data = await response.json();
+        console.log('Detected Anomalies:', data);
+        setAnomalies(data);  // Assuming setAnomalies is a React state setter
+      } catch (error) {
+        console.error('Error fetching anomalies:', error);
       }
-
-      setAnomalies(anomaliesDetected);
-    };
+    };                      
 
     const renderMoodProgress = () => {
         const moodText = moodProgress >= 0 ? `+${moodProgress}% happier than yesterday` : `${moodProgress}% less happy than yesterday`;
@@ -170,8 +169,8 @@ export function AnalysisScreen({ navigation }) {
                           <View key={index} style={styles.moodHistoryItem}>
                               <Text style={styles.moodHistoryDay}>{moodItem.day}</Text>
                               <Image 
-                                  source={moodImages[moodItem.emotion] || moodImages.blank} // Use blank emoji if emotion is not found
-                                  style={[styles.moodIcon, isFutureDay && { opacity: 0.5 }]} // Reduce opacity for future days
+                                  source={moodImages[moodItem.emotion] || moodImages.blank}
+                                  style={[styles.moodIcon, isFutureDay && { opacity: 0.5 }]}
                               />
                           </View>
                       );
@@ -180,15 +179,15 @@ export function AnalysisScreen({ navigation }) {
 
                 {/* Anomaly Detection Results */}
                 {anomalies.length > 0 && (
-                    <View style={styles.anomalyContainer}>
-                        <Text style={styles.anomalyTitle}>Anomaly Detection Results:</Text>
-                        {anomalies.map((anomaly, index) => (
-                            <Text key={index} style={styles.anomalyText}>
-                                On {anomaly.day}, mood changed by {anomaly.change}%
-                            </Text>
-                        ))}
-                    </View>
-                )}
+                <View style={styles.anomalyContainer}>
+                  <Text style={styles.anomalyTitle}>Anomaly Detection Results:</Text>
+                  {anomalies.map((anomaly, index) => (
+                    <Text key={index} style={styles.anomalyText}>
+                      On {anomaly.day}, mood changed by {anomaly.change}%
+                    </Text>
+                  ))}
+                </View>
+              )}
 
                 {/* Back and Next Button */}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 5, alignSelf: 'flex-end', }}>
