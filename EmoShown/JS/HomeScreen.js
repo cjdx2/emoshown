@@ -74,7 +74,26 @@ export function HomeScreen({ navigation }) {
       <View style={styles.quoteContainer}>
         <Text style={styles.quote}>{quote}</Text>
       </View>
-  
+
+       {/* Menu Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+         
+            <Pressable onPress={handleLogout} style={styles.modalButton}>
+              <Text style={styles.modalButtonText}>Logout</Text>
+            </Pressable>
+            <Pressable onPress={() => setModalVisible(false)} style={styles.modalButton}>
+              <Text style={styles.modalButtonText}>Close</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
       <View style={styles.bottomNav}>
         <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('MoodJournal')}>
           <Image source={require('../assets/dailymood.png')} style={styles.icon} />
@@ -92,38 +111,21 @@ export function HomeScreen({ navigation }) {
           <Image source={require('../assets/community.png')} style={styles.icon} />
         </TouchableOpacity>
       </View>
-  
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.date}>{currentDate}</Text>
-            <Pressable onPress={handleLogout} style={styles.modalButton}>
-              <Text style={styles.modalButtonText}>Logout</Text>
-            </Pressable>
-            <Pressable onPress={() => setModalVisible(false)} style={styles.modalButton}>
-              <Text style={styles.modalButtonText}>Close</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }
   
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    justifyContent: 'flex-start', // Changed to flex-start
-    alignItems: 'center',
+    flex: 1, 
+    padding: 20, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
     backgroundColor: '#fff',
-    padding: 20,
   },
   headerContainer: {
-    alignSelf: 'flex-start',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 20,
     width: '100%', // Ensures it takes full width
   },
@@ -175,26 +177,16 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
-    justifyContent: 'flex-start',
-    alignItems: 'flex-start',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    padding: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
-    width: 250,
-    maxHeight: 150,
-    padding: 20,
+    width: 300,
     backgroundColor: '#fff',
+    padding: 20,
     borderRadius: 10,
     alignItems: 'center',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    position: 'absolute',
-    top: 20,
-    left: 20,
   },
   modalButton: {
     padding: 10,
@@ -206,4 +198,19 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
   },
+  menuButton: {
+    marginRight: 10,
+    padding: 10,
+    backgroundColor: '#fff',
+    borderColor: '#000',
+    borderWidth: 1,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  menuButtonImage: {
+    width: 24,
+    height: 24,
+  },
+  
 });

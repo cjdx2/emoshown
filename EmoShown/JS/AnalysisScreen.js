@@ -184,7 +184,7 @@ export function AnalysisScreen({ navigation }) {
       try {
           console.log('Sending mood history for anomaly detection:', JSON.stringify(history));
 
-          const response = await fetch('http://192.168.1.11:5000/detect_anomalies', {
+          const response = await fetch('http://192.168.1.9:5000/detect_anomalies', {
               method: 'POST',
               headers: {
                   'Content-Type': 'application/json',
@@ -293,36 +293,24 @@ export function AnalysisScreen({ navigation }) {
                 )}
             </View>
 
-            {/* Modal */}
+            {/* Menu Modal */}
             <Modal
-              animationType="slide"
-              transparent={true}
-              visible={modalVisible}
-              onRequestClose={() => setModalVisible(false)}
-            >
-              <View style={styles.modalContainer}>
-                <View style={styles.modalContent}>
-                  <TouchableOpacity onPress={() => navigation.navigate('Home')}>
-                    <Text style={styles.modalText}>Home</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => navigation.navigate('MoodJournal')}>
-                    <Text style={styles.modalText}>Mood Journal</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => navigation.navigate('Analysis')}>
-                    <Text style={styles.modalText}>Analysis</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => navigation.navigate('Activities')}>
-                    <Text style={styles.modalText}>Activities</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => navigation.navigate('Community')}>
-                    <Text style={styles.modalText}>Community</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={handleLogout}>
-                    <Text style={styles.modalText}>Logout</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </Modal>
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+         
+            <Pressable onPress={handleLogout} style={styles.modalButton}>
+              <Text style={styles.modalButtonText}>Logout</Text>
+            </Pressable>
+            <Pressable onPress={() => setModalVisible(false)} style={styles.modalButton}>
+              <Text style={styles.modalButtonText}>Close</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
 
             <View style={styles.bottomNav}>
               <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('MoodJournal')}>
@@ -417,11 +405,18 @@ const styles = StyleSheet.create({
         marginBottom: 5,
     },
     menuButton: {
-        marginRight: 10,
+      marginRight: 10,
+      padding: 10,
+      backgroundColor: '#fff',
+      borderColor: '#000',
+      borderWidth: 1,
+      borderRadius: 8,
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     menuButtonImage: {
-        width: 25,
-        height: 25,
+      width: 24,
+      height: 24,
     },
     modalContainer: {
         flex: 1,
@@ -430,12 +425,13 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.5)',
     },
     modalButton: {
-        padding: 10,
-        backgroundColor: '#fff',
-        marginVertical: 5,
-        borderRadius: 5,
-    },
-    modalText: {
+    marginTop: 10,
+    padding: 10,
+    backgroundColor: '#000',
+    borderRadius: 5,
+  },
+    modalButtonText: {
+        color: '#fff',
         fontSize: 16,
     },
     positiveMood: {
@@ -447,13 +443,6 @@ const styles = StyleSheet.create({
     neutralMood: {
         color: '#d9d9d9',
     },
-menuButton: {
-    marginRight: 15,
-  },
-  menuButtonImage: {
-    width: 24,
-    height: 24,
-  },
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
