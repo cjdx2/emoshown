@@ -21,23 +21,6 @@ const moodImages = {
     blank: require('../assets/blankemoji.png'),
 };
 
-const getMoodStyle = (mood) => {
-  switch (mood) {
-      case 'happy':
-      case 'grateful':
-      case 'excited':
-      case 'calm':
-          return styles.positiveMood;
-      case 'sad':
-      case 'angry':
-      case 'worried':
-      case 'lonely':
-          return styles.negativeMood;
-      default:
-          return styles.neutralMood;
-  }
-};
-
 export function AnalysisScreen({ navigation }) {
     const [currentDate, setCurrentDate] = useState('');
     const [moodToday, setMoodToday] = useState('');
@@ -114,64 +97,70 @@ export function AnalysisScreen({ navigation }) {
 
     // MOOD HISTORY
     useEffect(() => {
-      const fetchMoodHistory = async () => {
-          const userId = auth.currentUser.uid;
-          const moodsRef = collection(firestore, 'journals');
-  
-          const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-          const today = startOfDay(new Date());
-          let last7DaysData = [];
-          const startOfWeek = subDays(today, today.getDay());
-  
-          const startDayToFetch = (today.getDay() === 0) ? subDays(startOfWeek, 1) : startOfWeek;
-          
-          for (let i = 0; i < 7; i++) {
-              const day = subDays(startDayToFetch, -i);
-              const dayFormatted = format(day, 'MMMM d, yyyy');
-              const dayQuery = query(
-                  moodsRef,
-                  where('userId', '==', userId),
-                  where('date', '==', dayFormatted)
-              );
-              const daySnapshot = await getDocs(dayQuery);
-  
-              let emotion = 'blank';
-              let sentiment = 0;
-  
-              if (!daySnapshot.empty) {
-                  const journalData = daySnapshot.docs[0].data();
-                  emotion = journalData.emotion || 'blank';
-                  sentiment = journalData.sentiment ? journalData.sentiment.compound : 0;
-              }
-  
-              const dayOfWeek = format(day, 'E');
-  
-              last7DaysData.push({
-                  day: dayOfWeek,
-                  date: dayFormatted,
-                  emotion: emotion,
-                  sentiment: sentiment
-              });
-          }
-  
-          const sortedData = last7DaysData.sort((a, b) => {
-              return daysOfWeek.indexOf(a.day) - daysOfWeek.indexOf(b.day);
-          });
-  
-          setMoodHistory(sortedData);
-  
-          const todayMood = sortedData[0];
-          if (todayMood) {
-              setMoodToday(todayMood.emotion);
-              setMoodProgress(todayMood.sentiment);
-          } else {
-              setMoodToday('No mood data available.');
-              setMoodProgress(0);
-          }
-      };
-  
-      fetchMoodHistory();
-  }, []);        
+        const fetchMoodHistory = async () => {
+            const userId = auth.currentUser.uid;
+            const moodsRef = collection(firestore, 'journals');
+        
+            const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const today = startOfDay(new Date());
+            let last7DaysData = [];
+            const startOfWeek = subDays(today, today.getDay());
+        
+            const startDayToFetch = (today.getDay() === 0) ? subDays(startOfWeek, 1) : startOfWeek;
+        
+            for (let i = 0; i < 7; i++) {
+                const day = subDays(startDayToFetch, -i);
+                const dayFormatted = format(day, 'MMMM d, yyyy');
+                const dayQuery = query(
+                    moodsRef,
+                    where('userId', '==', userId),
+                    where('date', '==', dayFormatted)
+                );
+                const daySnapshot = await getDocs(dayQuery);
+        
+                let emotion = 'blank';
+                let sentiment = 0;
+        
+                if (!daySnapshot.empty) {
+                    const journalData = daySnapshot.docs[0].data();
+                    emotion = journalData.emotion || 'blank';
+                    sentiment = journalData.sentiment ? journalData.sentiment.compound : 0;
+                }
+        
+                const dayOfWeek = format(day, 'E');
+        
+                last7DaysData.push({
+                    day: dayOfWeek,
+                    date: dayFormatted,
+                    emotion: emotion,
+                    sentiment: sentiment
+                });
+            }
+        
+            const sortedData = last7DaysData.sort((a, b) => {
+                return daysOfWeek.indexOf(a.day) - daysOfWeek.indexOf(b.day);
+            });
+        
+            console.log('Sorted Mood History:', sortedData);
+        
+            setMoodHistory(sortedData);
+        
+            const todayMood = sortedData.find(item => item.day === format(new Date(), 'E'));
+            console.log('Today Mood:', todayMood);
+            if (todayMood) {
+                setMoodToday(todayMood.emotion);
+                const yesterdayMood = sortedData[1] || { sentiment: 0 };
+                const progress = todayMood.sentiment - yesterdayMood.sentiment;
+                setMoodProgress(progress);
+            } else {
+                console.log('No mood data available for today.');
+                setMoodToday('No mood data available.');
+                setMoodProgress(0);
+            }
+        };        
+    
+        fetchMoodHistory();
+    }, []);            
 
     // ANOMALY DETECTION
     useEffect(() => {
@@ -181,66 +170,70 @@ export function AnalysisScreen({ navigation }) {
     }, [moodHistory]);
 
     const detectAnomalies = async (history) => {
-      try {
-          console.log('Sending mood history for anomaly detection:', JSON.stringify(history));
-
-          const response = await fetch('http://192.168.1.9:5000/detect_anomalies', {
-              method: 'POST',
-              headers: {
-                  'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(history),
-          });
-
-          if (!response.ok) {
-              throw new Error(`HTTP error! Status: ${response.status}`);
-          }
-
-          const data = await response.json();
-          console.log('Anomalies detected:', data);
-
-          if (Array.isArray(data)) {
-              setAnomalies(data);
-          } else {
-              console.error('Unexpected data format received:', data);
-              setAnomalies([]);
-          }
-      } catch (error) {
-          console.error('Error fetching anomalies:', error);
-      }
-    };
-
-    const getSentimentDescription = (sentimentScore) => {
-        if (sentimentScore > 0.05) {
-            return 'positive';
-        } else if (sentimentScore < -0.05) {
-            return 'negative';
-        } else {
-            return 'neutral';
+        try {
+            console.log('Sending mood history for anomaly detection:', JSON.stringify(history));
+    
+            const response = await fetch('http://192.168.1.11:5000/detect_anomalies', { //url
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(history),
+            });
+    
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+    
+            const data = await response.json();
+            console.log('Anomalies detected:', data);
+    
+            if (Array.isArray(data) && data.length > 0) {
+                setAnomalies(data);
+                Alert.alert(
+                    'Anomaly Detected',
+                    'It looks like there was a change in your mood recently. Would you like to take a moment to reflect on it?',
+                    [
+                        { text: 'No, I’m okay', onPress: () => console.log('User is okay'), style: 'cancel' },
+                        { 
+                          text: 'Yes, take a moment', 
+                          onPress: () => navigation.navigate('Activities')
+                        }
+                      ]
+                );                
+            } else {
+                console.error('No anomalies detected or unexpected data format received:', data);
+                setAnomalies([]);
+            }
+        } catch (error) {
+            console.error('Error fetching anomalies:', error);
         }
-    };
+    };    
 
     return (
         <View style={styles.container}>
             <Text style={styles.date}>{currentDate}</Text>
             <Text style={styles.moodText}>
-                {moodToday ? 
+                {moodToday !== 'No mood data available.' ? 
                     `You've been feeling ` : 
                     "No mood data available."}
-                <Text style={getMoodStyle(moodToday)}>
-                    {moodToday}
+                <Text style={styles.boldText}>
+                    {moodToday !== 'No mood data available.' ? moodToday : ''}
                 </Text>
-                {moodToday ? ' today' : ''}
+                {moodToday !== 'No mood data available.' ? ' today' : ''}
             </Text>
+            
             <Text style={styles.moodProgress}>
-                {moodProgress >= 0 
-                  ? <>
-                <Text style={styles.boldText}>+{moodProgress}%</Text> happier than yesterday
-              </>
-            : <>
-                <Text style={styles.boldText}>{moodProgress}%</Text> less happy than yesterday
-              </>
-                }</Text>
+                {moodProgress >= 0 ? (
+                    <>
+                        <Text style={styles.boldText}>+{moodProgress.toFixed(2)}%</Text> happier than yesterday
+                    </>
+                ) : (
+                    <>
+                        <Text style={styles.boldText}>{moodProgress.toFixed(2)}%</Text> less happy than yesterday
+                    </>
+                )}
+            </Text>
 
             {/* Mood History */}
             {moodHistory.length > 0 ? (
@@ -285,7 +278,14 @@ export function AnalysisScreen({ navigation }) {
                 {anomalies.length > 0 ? (
                     anomalies.map((anomaly, index) => (
                         <Text key={index} style={styles.anomalyText}>
-                            {anomaly.date ? `On ${anomaly.date}, your mood was ${getSentimentDescription(anomaly.sentiment)}.` : 'No anomalies detected.'}
+                            {anomaly.day ? (
+                                <>
+                                    <Text>On </Text>
+                                    <Text style={styles.redText}>{anomaly.day}</Text>
+                                    <Text>{":\nYour Mood Changed by "}</Text>
+                                    <Text style={styles.redText}>{anomaly.change}%</Text>
+                                </>
+                            ) : 'No anomalies detected.'}
                         </Text>
                     ))
                 ) : (
@@ -295,22 +295,22 @@ export function AnalysisScreen({ navigation }) {
 
             {/* Menu Modal */}
             <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-         
-            <Pressable onPress={handleLogout} style={styles.modalButton}>
-              <Text style={styles.modalButtonText}>Logout</Text>
-            </Pressable>
-            <Pressable onPress={() => setModalVisible(false)} style={styles.modalButton}>
-              <Text style={styles.modalButtonText}>Close</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
+                animationType="slide"
+                transparent={true}
+                visible={modalVisible}
+                onRequestClose={() => setModalVisible(false)}>
+                <View style={styles.modalContainer}>
+                <View style={styles.modalContent}>
+                
+                    <Pressable onPress={handleLogout} style={styles.modalButton}>
+                    <Text style={styles.modalButtonText}>Logout</Text>
+                    </Pressable>
+                    <Pressable onPress={() => setModalVisible(false)} style={styles.modalButton}>
+                    <Text style={styles.modalButtonText}>Close</Text>
+                    </Pressable>
+                </View>
+                </View>
+            </Modal>
 
             <View style={styles.bottomNav}>
               <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('MoodJournal')}>
@@ -349,7 +349,6 @@ const styles = StyleSheet.create({
         fontSize: 30,
         textAlign: 'left',
         marginVertical: 5,
-        fontWeight: 'bold',
     },
     moodProgress: {
         textAlign: 'left',
@@ -405,18 +404,18 @@ const styles = StyleSheet.create({
         marginBottom: 5,
     },
     menuButton: {
-      marginRight: 10,
-      padding: 10,
-      backgroundColor: '#fff',
-      borderColor: '#000',
-      borderWidth: 1,
-      borderRadius: 8,
-      justifyContent: 'center',
-      alignItems: 'center',
+        marginRight: 10,
+        padding: 10,
+        backgroundColor: '#fff',
+        borderColor: '#000',
+        borderWidth: 1,
+        borderRadius: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     menuButtonImage: {
-      width: 24,
-      height: 24,
+        width: 24,
+        height: 24,
     },
     modalContainer: {
         flex: 1,
@@ -425,57 +424,51 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.5)',
     },
     modalButton: {
-    marginTop: 10,
-    padding: 10,
-    backgroundColor: '#000',
-    borderRadius: 5,
-  },
+        marginTop: 10,
+        padding: 10,
+        backgroundColor: '#000',
+        borderRadius: 5,
+    },
     modalButtonText: {
         color: '#fff',
         fontSize: 16,
     },
-    positiveMood: {
-        color: '#a3c2e8',
+    modalContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
     },
-    negativeMood: {
-        color: '#b9dabf',
+    modalContent: {
+        backgroundColor: 'white',
+        padding: 20,
+        borderRadius: 10,
+        width: '80%',
+        alignItems: 'center',
     },
-    neutralMood: {
-        color: '#d9d9d9',
+    modalText: {
+        fontSize: 18,
+        marginBottom: 10,
+        color: '#333',
     },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContent: {
-    backgroundColor: 'white',
-    padding: 20,
-    borderRadius: 10,
-    width: '80%',
-    alignItems: 'center',
-  },
-  modalText: {
-    fontSize: 18,
-    marginBottom: 10,
-    color: '#333',
-  },
-  bottomNav: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    paddingVertical: 10,
-    backgroundColor: '#f9f9f9',
-  },
-  iconButton: {
-    padding: 10,
-  },
-  icon: {
-    width: 24,
-    height: 24,
-  },
-  boldText: {
-    fontWeight: 'bold', 
-  },
+    bottomNav: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        alignItems: 'center',
+        paddingVertical: 10,
+        backgroundColor: '#f9f9f9',
+    },
+    iconButton: {
+        padding: 10,
+    },
+    icon: {
+        width: 24,
+        height: 24,
+    },
+    boldText: {
+        fontWeight: 'bold', 
+    },
+    redText: {
+        color: 'red',
+    },
 });
