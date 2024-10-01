@@ -53,13 +53,13 @@ const ActivityRecommendation = ({ navigation }) => {
 
             // Fetch activity recommendation counts
             const activitySnapshot = await getDocs(activitiesCollection);
-            const activityCount = Array(activities.length).fill(0); // Initialize counts for each activity
+            const activityCount = {}; // Initialize counts for each activity as an object
 
             activitySnapshot.forEach(doc => {
                 const data = doc.data();
-                const activityIndex = activities.indexOf(data.activity); // Find index of the activity
-                if (activityIndex !== -1) {
-                    activityCount[activityIndex] += data.recommendationCount || 0; // Accumulate recommendations
+                const activityName = data.activity; // Get the activity name from the document
+                if (activityName) {
+                    activityCount[activityName] = (activityCount[activityName] || 0) + (data.recommendationCount || 0); // Accumulate recommendations
                 }
             });
 
@@ -68,7 +68,7 @@ const ActivityRecommendation = ({ navigation }) => {
             // Assuming there are as many rows as there are users
             const usersSnapshot = await getDocs(collection(firestore, 'users')); // Fetch users
             usersSnapshot.forEach(() => {
-                matrix.push(activityCount); // Each user gets the aggregated activity counts
+                matrix.push(Object.values(activityCount)); // Each user gets the aggregated activity counts
             });
 
             setUserActivityMatrix(matrix); // Set the dynamic activity matrix
@@ -110,9 +110,13 @@ const createActivityDocument = async () => {
             // Prepare the data to be stored
             const activityData = {
                 fullName: fullName, // User's full name
-                recommendationCount: Array(activities.length).fill(0), // Initialize counts for each activity
+                recommendationCount: {}, // Initialize counts for each activity as an object
                 timestamp: new Date(), // Optional: record when the data was created
             };
+                 // Initialize recommendation counts for each activity
+                 activities.forEach(activity => {
+                    activityData.recommendationCount[activity] = 0; // Set initial count to 0
+                });
 
             // Set the document with the activity data
             await setDoc(activityRef, activityData);
@@ -124,24 +128,69 @@ const createActivityDocument = async () => {
         console.error("Error creating activity document:", error);
     }
 };
+
 const updateRecommendationCount = async (activity) => {
     try {
-        // Fetch the activity document based on the activity name
         const activityRef = collection(firestore, 'activities');
         const querySnapshot = await getDocs(activityRef);
-        querySnapshot.forEach(async (doc) => {
+        
+
+        const activityDoc = querySnapshot.docs.find(doc => {
             const data = doc.data();
-            if (data.fullName === userFullName && data.activity === activity) {
-                // Update the recommendation count for the specific activity
-                await setDoc(doc.ref, {
-                    recommendationCount: data.recommendationCount + 1,
-                }, { merge: true });
-                console.log(`Updated recommendation count for ${activity}`);
-            }
+            return data.fullName === userFullName; // Match only based on fullName
         });
+
+        if (activityDoc) {
+            const currentRecommendationCount = activityDoc.data().recommendationCount;
+            currentRecommendationCount[activityIndex] += 1; // Increment the count at the found index
+
+            await setDoc(activityDoc.ref, {
+                recommendationCount: currentRecommendationCount,
+            }, { merge: true });
+            console.log(`Updated recommendation count for ${activity}`);
+        } else {
+            console.error("Activity document not found for updating.");
+        }
     } catch (error) {
         console.error("Error updating recommendation count:", error);
     }
+};
+
+
+// Add the SVD function to perform matrix factorization
+const svd = (matrix) => {
+    const rows = matrix.length;
+    const cols = matrix[0].length;
+
+    // Initialize user and item latent feature matrices
+    const userFeatures = Array.from({ length: rows }, () => Array(2).fill(0));
+    const itemFeatures = Array.from({ length: cols }, () => Array(2).fill(0));
+
+    // Random initialization of features
+    for (let i = 0; i < rows; i++) {
+        userFeatures[i] = [Math.random(), Math.random()]; // 2 latent features
+    }
+
+    for (let j = 0; j < cols; j++) {
+        itemFeatures[j] = [Math.random(), Math.random()]; // 2 latent features
+    }
+
+    // Training phase
+    for (let iter = 0; iter < 1000; iter++) {
+        for (let i = 0; i < rows; i++) {
+            for (let j = 0; j < cols; j++) {
+                if (matrix[i][j] > 0) { // Only consider non-zero entries
+                    const error = matrix[i][j] - (userFeatures[i][0] * itemFeatures[j][0] + userFeatures[i][1] * itemFeatures[j][1]);
+                    userFeatures[i][0] += 0.01 * error * itemFeatures[j][0];
+                    userFeatures[i][1] += 0.01 * error * itemFeatures[j][1];
+                    itemFeatures[j][0] += 0.01 * error * userFeatures[i][0];
+                    itemFeatures[j][1] += 0.01 * error * userFeatures[i][1];
+                }
+            }
+        }
+    }
+
+    return { userFeatures, itemFeatures };
 };
 
 // Call this function in your recommendActivities function
@@ -149,22 +198,19 @@ const recommendActivities = async () => {
     try {
         if (!userSentiment || userActivityMatrix.length === 0) return;
 
-        const matrix = userActivityMatrix.map(row =>
-            row.map(value => value + (userSentiment.compound * 2)) // Adjust based on sentiment
-        );
+        // Perform SVD to get the latent feature matrices
+        const { userFeatures, itemFeatures } = svd(userActivityMatrix);
 
-        const userIndex = 0; // You can update this to dynamically select the current user
-        const weightedScores = matrix[userIndex].map((score, index) => ({
-            activity: activities[index],
-            score: score
-        }));
+        const userIndex = 0; // Assuming we have a single user for simplicity
+        const recommendations = itemFeatures.map((item, index) => {
+            const score = userFeatures[userIndex][0] * item[0] + userFeatures[userIndex][1] * item[1];
+            return { activity: activities[index], score };
+        });
 
-        const sortedRecommendations = weightedScores
-            .sort((a, b) => b.score - a.score)
-            .slice(0, 3); // Get top 3 recommendations
-
+        // Sort recommendations based on score
+        const sortedRecommendations = recommendations.sort((a, b) => b.score - a.score).slice(0, 3);
         setRecommendations(sortedRecommendations);
-        
+
         // Update recommendation counts for the top activities
         sortedRecommendations.forEach(rec => updateRecommendationCount(rec.activity));
 
