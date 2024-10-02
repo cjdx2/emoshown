@@ -23,6 +23,8 @@ export function ActivityRecommendation({ navigation }) {
             if (response.ok) {
                 console.log("Recommendations data:", data);  // Debugging line to check data
                 setRecommendations(data);
+                // Check if recommendations are based on mood
+                console.log("Fetched recommendations based on mood:", data);
             } else {
                 console.error("Error response:", data);  // Log the error response from the server
                 Alert.alert('Error', data.error || 'Failed to get recommendations');
@@ -46,7 +48,7 @@ export function ActivityRecommendation({ navigation }) {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ userId, id, type, isLike }),
+                body: JSON.stringify({ userId, itemId: id, type, like: isLike }),
             });
 
             if (response.ok) {
@@ -68,15 +70,17 @@ export function ActivityRecommendation({ navigation }) {
             {recommendations.length > 0 ? (
                 recommendations.map((rec, index) => (
                     <View key={index} style={styles.recommendationItem}>
-                        {rec.type === 'activity' ? (
-                            <Text>Activity ID: {rec.activityId}</Text>
-                        ) : (
-                            <Text>Resource ID: {rec.resourceId}</Text>
-                        )}
-                        <Text>Predicted Rating: {rec.predicted_rating !== null ? rec.predicted_rating.toFixed(2) : 'Not Rated'}</Text>
+                        <Text>{rec.type === 'activity' ? 'Activity' : 'Resource'} Title: {rec.title}</Text>
+                        <Text>Description: {rec.description}</Text>
                         <View style={styles.buttonContainer}>
-                            <Button title="Like" onPress={() => handleRateRecommendation(rec.activityId || rec.resourceId, rec.type, true)} />
-                            <Button title="Dislike" onPress={() => handleRateRecommendation(rec.activityId || rec.resourceId, rec.type, false)} />
+                            <Button
+                                title="Like"
+                                onPress={() => handleRateRecommendation(rec.id, rec.type, true)}
+                            />
+                            <Button
+                                title="Dislike"
+                                onPress={() => handleRateRecommendation(rec.id, rec.type, false)}
+                            />
                         </View>
                     </View>
                 ))
