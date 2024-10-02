@@ -9,15 +9,15 @@ export function ActivityRecommendation({ navigation }) {
     const fetchRecommendations = async () => {
         try {
             const userId = auth.currentUser.uid;
-            
+
             const response = await fetch('http://192.168.1.11:5000/recommend', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ userId })
+                body: JSON.stringify({ userId }),
             });
-            
+
             const data = await response.json();
 
             if (response.ok) {
@@ -31,7 +31,7 @@ export function ActivityRecommendation({ navigation }) {
             console.error('Error fetching recommendations:', error);
             Alert.alert('Error', 'An error occurred while fetching recommendations.');
         }
-    };    
+    };
 
     useEffect(() => {
         fetchRecommendations();
@@ -46,7 +46,7 @@ export function ActivityRecommendation({ navigation }) {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ userId, id, type, isLike })
+                body: JSON.stringify({ userId, id, type, isLike }),
             });
 
             if (response.ok) {
