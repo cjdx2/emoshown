@@ -10,7 +10,7 @@ import { AnalysisScreen } from './JS/AnalysisScreen';
 import { QuestionnaireScreen } from './JS/QuestionnaireScreen';
 import { IntroductionScreen } from './JS/IntroductionScreen';
 import { CommunityScreen } from './JS/CommunityScreen';
-import { ActivityRecommendation } from './JS/ActivityRecommendation';
+import ActivityRecommendation from './JS/ActivityRecommendation';
 import { Provider as PaperProvider } from 'react-native-paper';
 // import AsyncStorage from '@react-native-async-storage/async-storage';
 

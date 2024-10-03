@@ -1,0 +1,218 @@
+{
+    "data": [
+      {
+        "title": "Yoga Class",
+        "description": "A calming yoga session.",
+        "type": "Activity",
+        "emotionalImpact": ["positive", "neutral"],
+        "tags": ["relaxation", "mindfulness", "exercise"]
+      },
+      {
+        "title": "Guided Meditation",
+        "description": "A guided session for relaxation.",
+        "type": "Activity",
+        "emotionalImpact": ["positive", "neutral", "negative"],
+        "tags": ["stress relief", "mindfulness"]
+      },
+      {
+        "title": "Nature Walk",
+        "description": "A peaceful walk in nature.",
+        "type": "Activity",
+        "emotionalImpact": ["positive", "neutral"],
+        "tags": ["exercise", "outdoor", "nature"]
+      },
+      {
+        "title": "Creative Writing",
+        "description": "Express your thoughts through writing.",
+        "type": "Activity",
+        "emotionalImpact": ["positive", "neutral"],
+        "tags": ["creativity", "expression"]
+      },
+      {
+        "title": "Art Therapy",
+        "description": "Use art as a form of expression and healing.",
+        "type": "Activity",
+        "emotionalImpact": ["positive", "neutral", "negative"],
+        "tags": ["creativity", "therapy"]
+      },
+      {
+        "title": "Breathing Exercises",
+        "description": "Simple breathing techniques to calm the mind.",
+        "type": "Activity",
+        "emotionalImpact": ["positive", "neutral"],
+        "tags": ["relaxation", "stress relief"]
+      },
+      {
+        "title": "Journaling",
+        "description": "Write down your thoughts and feelings.",
+        "type": "Activity",
+        "emotionalImpact": ["positive", "neutral"],
+        "tags": ["self-reflection", "mental health"]
+      },
+      {
+        "title": "Dance Class",
+        "description": "An energetic dance session to boost mood.",
+        "type": "Activity",
+        "emotionalImpact": ["positive"],
+        "tags": ["exercise", "fun"]
+      },
+      {
+        "title": "Cooking Healthy Meals",
+        "description": "Prepare nutritious meals for mental and physical health.",
+        "type": "Activity",
+        "emotionalImpact": ["positive"],
+        "tags": ["nutrition", "wellness"]
+      },
+      {
+        "title": "Volunteer Work",
+        "description": "Help others while boosting your own mood.",
+        "type": "Activity",
+        "emotionalImpact": ["positive"],
+        "tags": ["community", "giving back"]
+      },
+      {
+        "title": "Listening to Music",
+        "description": "Relax with your favorite tunes.",
+        "type": "Activity",
+        "emotionalImpact": ["positive", "neutral"],
+        "tags": ["music", "relaxation"]
+      },
+      {
+        "title": "Gardening",
+        "description": "Connect with nature while tending to plants.",
+        "type": "Activity",
+        "emotionalImpact": ["positive", "neutral"],
+        "tags": ["nature", "outdoor"]
+      },
+      {
+        "title": "Mindful Walking",
+        "description": "Walk while focusing on your surroundings.",
+        "type": "Activity",
+        "emotionalImpact": ["positive", "neutral"],
+        "tags": ["mindfulness", "exercise"]
+      },
+      {
+        "title": "Attend a Support Group",
+        "description": "Share experiences and support one another.",
+        "type": "Activity",
+        "emotionalImpact": ["positive", "neutral"],
+        "tags": ["community", "support"]
+      },
+      {
+        "title": "Puzzle Solving",
+        "description": "Engage your mind with puzzles or games.",
+        "type": "Activity",
+        "emotionalImpact": ["positive", "neutral"],
+        "tags": ["fun", "mental exercise"]
+      },
+      {
+        "title": "Aromatherapy",
+        "description": "Use essential oils to promote relaxation.",
+        "type": "Activity",
+        "emotionalImpact": ["positive", "neutral"],
+        "tags": ["relaxation", "therapy"]
+      },
+      {
+        "title": "Play with Pets",
+        "description": "Spend time with pets for emotional support.",
+        "type": "Activity",
+        "emotionalImpact": ["positive"],
+        "tags": ["animals", "companionship"]
+      },
+      {
+        "title": "Reading Inspirational Books",
+        "description": "Read books that uplift and motivate you.",
+        "type": "Activity",
+        "emotionalImpact": ["positive"],
+        "tags": ["reading", "inspiration"]
+      },
+      {
+        "title": "Take a Relaxing Bath",
+        "description": "Enjoy a warm bath to unwind.",
+        "type": "Activity",
+        "emotionalImpact": ["positive", "neutral"],
+        "tags": ["self-care", "relaxation"]
+      },
+      {
+        "title": "How to Meditate",
+        "description": "An article on meditation techniques.",
+        "type": "Resource",
+        "emotionalImpact": ["positive", "neutral"],
+        "tags": ["mindfulness", "meditation"],
+        "link": "https://www.headspace.com/articles/how-to-meditate-in-ten-minutes"
+      },
+      {
+        "title": "Positive Affirmations",
+        "description": "A collection of positive affirmations.",
+        "type": "Resource",
+        "emotionalImpact": ["positive"],
+        "tags": ["self-esteem", "motivation"],
+        "link": "https://www.thegoodtrade.com/features/positive-affirmations-morning-routine/"
+      },
+      {
+        "title": "Mental Health Podcasts",
+        "description": "Podcasts focusing on mental health topics.",
+        "type": "Resource",
+        "emotionalImpact": ["positive", "neutral"],
+        "tags": ["mental health", "wellness"],
+        "link": "https://www.youtube.com/@JayShettyPodcast./videos"
+      },
+      {
+        "title": "Yoga for Beginners",
+        "description": "A video series on beginner yoga poses.",
+        "type": "Resource",
+        "emotionalImpact": ["positive", "neutral"],
+        "tags": ["exercise", "wellness"],
+        "link": "https://www.youtube.com/@yogawithadriene/videos"
+      },
+      {
+        "title": "Cognitive Behavioral Therapy Basics",
+        "description": "An introduction to Cognitive Behavioral Therapy.",
+        "type": "Resource",
+        "emotionalImpact": ["positive", "neutral", "negative"],
+        "tags": ["mental health", "therapy"],
+        "link": "https://www.mayoclinic.org/tests-procedures/cognitive-behavioral-therapy/about/pac-20384610"
+      },
+      {
+        "title": "Self-Care Practices",
+        "description": "A guide to simple self-care practices.",
+        "type": "Resource",
+        "emotionalImpact": ["positive", "neutral"],
+        "tags": ["self-care", "wellness"],
+        "link": "https://www.verywellmind.com/self-care-strategies-overall-stress-reduction-3144729"
+      },
+      {
+        "title": "Mindfulness Apps Review",
+        "description": "A review of popular mindfulness apps.",
+        "type": "Resource",
+        "emotionalImpact": ["positive", "neutral"],
+        "tags": ["mindfulness", "technology"],
+        "link": "https://www.verywellmind.com/best-meditation-apps-4767322"
+      },
+      {
+        "title": "Breathing Techniques for Anxiety",
+        "description": "A video explaining breathing techniques to relieve anxiety.",
+        "type": "Resource",
+        "emotionalImpact": ["positive", "neutral", "negative"],
+        "tags": ["anxiety", "mindfulness"],
+        "link": "https://www.youtube.com/watch?v=odADwWzHR24"
+      },
+      {
+        "title": "Nutrition and Mental Health",
+        "description": "How nutrition affects mental health.",
+        "type": "Resource",
+        "emotionalImpact": ["positive", "neutral"],
+        "tags": ["nutrition", "mental health"],
+        "link": "https://www.aetna.com/health-guide/food-affects-mental-health.html#:~:text=When%20you%20stick%20to%20a,symptoms%20of%20depression%20and%20anxiety."
+      },
+      {
+        "title": "Motivational Quotes Collection",
+        "description": "A collection of motivational quotes for mental health.",
+        "type": "Resource",
+        "emotionalImpact": ["positive"],
+        "tags": ["inspiration", "motivation"],
+        "link": "https://mentalhealthmatch.com/articles/anxiety/inspiring-mental-health-quotes"
+      }
+    ]
+  }
+  

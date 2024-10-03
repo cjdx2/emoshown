@@ -1,116 +1,152 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Alert, Button } from 'react-native';
-import { auth } from './firebaseConfig';
+import React, { useEffect, useState } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { firestore } from './firebaseConfig';
+import { collection, query, where, getDocs, orderBy, limit, addDoc } from 'firebase/firestore';
+import axios from 'axios';
 
-export function ActivityRecommendation({ navigation }) {
-    const [recommendations, setRecommendations] = useState([]);
+const ActivityRecommendation = ({ route }) => {
+  const { userId } = route?.params || {}; // Fallback to empty object
+  const [sentiment, setSentiment] = useState(null);
+  const [recommendations, setRecommendations] = useState([]);
 
-    // Fetch recommendations from Flask API
+  useEffect(() => {
+    console.log('Route props:', route);
+    console.log('User ID:', userId); // Log the userId
+
+    if (!userId) {
+      console.error('User ID is undefined');
+      return; // Early exit if userId is undefined
+    }
+
+    const fetchSentiment = async () => {
+        try {
+            console.log('Fetching journals for user ID:', userId);
+    
+            const today = new Date().toISOString().split('T')[0];
+    
+            const journalSnapshot = await getDocs(
+                query(
+                    collection(firestore, 'journals'),
+                    where('userId', '==', userId),
+                    where('date', '>=', today),
+                    orderBy('userId'),
+                    orderBy('date', 'desc'),
+                    limit(1)
+                )
+            );
+    
+            if (!journalSnapshot.empty) {
+                const journalData = journalSnapshot.docs[0].data();
+                console.log('Fetched journal data:', journalData);
+                setSentiment(journalData.sentiment);
+            } else {
+                console.log('No journals found for user:', userId);
+            }            
+        } catch (error) {
+            console.error('Error fetching sentiment:', error);
+            if (error.code === 'failed-precondition') {
+                console.log('This query requires an index. Please check the Firestore console.');
+            }
+        }
+    };    
+    
+    fetchSentiment();
+  }, [userId]);
+
+  // Fetch recommendations from Flask API
+  useEffect(() => {
     const fetchRecommendations = async () => {
+      if (sentiment) {
+        console.log('Fetching recommendations for:', { userId, sentiment }); // Log parameters
         try {
-            const userId = auth.currentUser.uid;
-
-            const response = await fetch('http://192.168.1.11:5000/recommend', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ userId }),
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                console.log("Recommendations data:", data);  // Debugging line to check data
-                setRecommendations(data);
-                // Check if recommendations are based on mood
-                console.log("Fetched recommendations based on mood:", data);
-            } else {
-                console.error("Error response:", data);  // Log the error response from the server
-                Alert.alert('Error', data.error || 'Failed to get recommendations');
-            }
+          const response = await axios.get(`http://192.168.1.11:5000/recommend`, {
+            params: {
+              userId: userId,
+              sentiment: sentiment,
+            },
+          });
+          console.log('Recommendations received:', response.data); // Log the response
+          setRecommendations(response.data.recommendations);
         } catch (error) {
-            console.error('Error fetching recommendations:', error);
-            Alert.alert('Error', 'An error occurred while fetching recommendations.');
+          console.error('Error fetching recommendations:', error);
         }
+      }
     };
 
-    useEffect(() => {
-        fetchRecommendations();
-    }, []);
+    fetchRecommendations();
+  }, [sentiment, userId]);
 
-    const handleRateRecommendation = async (id, type, isLike) => {
-        try {
-            const userId = auth.currentUser.uid;
-
-            const response = await fetch('http://192.168.1.11:5000/rate', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ userId, itemId: id, type, like: isLike }),
-            });
-
-            if (response.ok) {
-                console.log(`Successfully rated ${type} with ID: ${id}`);
-                fetchRecommendations();  // Refresh recommendations after rating
-            } else {
-                const errorData = await response.json();
-                Alert.alert('Error', errorData.error || 'Failed to rate the recommendation');
-            }
-        } catch (error) {
-            console.error('Error rating recommendation:', error);
-            Alert.alert('Error', 'An error occurred while rating the recommendation.');
-        }
-    };
-
-    return (
-        <View style={styles.container}>
-            <Text style={styles.header}>Recommended Activities and Resources</Text>
-            {recommendations.length > 0 ? (
-                recommendations.map((rec, index) => (
-                    <View key={index} style={styles.recommendationItem}>
-                        <Text>{rec.type === 'activity' ? 'Activity' : 'Resource'} Title: {rec.title}</Text>
-                        <Text>Description: {rec.description}</Text>
-                        <View style={styles.buttonContainer}>
-                            <Button
-                                title="Like"
-                                onPress={() => handleRateRecommendation(rec.id, rec.type, true)}
-                            />
-                            <Button
-                                title="Dislike"
-                                onPress={() => handleRateRecommendation(rec.id, rec.type, false)}
-                            />
-                        </View>
-                    </View>
-                ))
-            ) : (
-                <Text>No recommendations available.</Text>
-            )}
-        </View>
-    );
-}
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Recommendations based on your mood:</Text>
+      {recommendations.length === 0 ? (
+        <Text>No recommendations available at this time.</Text>
+      ) : (
+        <FlatList
+          data={recommendations}
+          renderItem={({ item }) => (
+            <View style={styles.itemContainer}>
+              <Text style={styles.itemTitle}>{item.title}</Text>
+              <Text style={styles.itemDescription}>{item.description}</Text>
+              <TouchableOpacity
+                style={styles.button}
+                onPress={async () => {
+                  await addDoc(collection(firestore, 'recoratings'), {
+                    title: item.title,
+                    userId: userId,
+                    like: true, // Assume user likes this item for demo
+                    type: item.type,
+                  });
+                }}
+              >
+                <Text style={styles.buttonText}>Like</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+          keyExtractor={(item) => item.id.toString()} // Ensure id is a string
+        />
+      )}
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        padding: 16,
-    },
-    header: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        marginBottom: 16,
-    },
-    recommendationItem: {
-        marginBottom: 10,
-        padding: 10,
-        borderRadius: 5,
-        borderColor: '#ccc',
-        borderWidth: 1,
-    },
-    buttonContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginTop: 10,
-    },
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#fff',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  itemContainer: {
+    marginBottom: 15,
+    padding: 15,
+    borderRadius: 8,
+    backgroundColor: '#f9f9f9',
+    borderColor: '#ddd',
+    borderWidth: 1,
+  },
+  itemTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  itemDescription: {
+    marginVertical: 5,
+  },
+  button: {
+    backgroundColor: '#28a745',
+    padding: 10,
+    borderRadius: 5,
+    marginTop: 10,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
 });
+
+export default ActivityRecommendation;

@@ -9,6 +9,7 @@ export function HomeScreen({ navigation }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [quote, setQuote] = useState('');
   const [username, setUsername] = useState('');
+  const [userId, setUserId] = useState('');
 
   const handleLogout = () => {
     signOut(auth)
@@ -46,12 +47,13 @@ export function HomeScreen({ navigation }) {
     const user = auth.currentUser;
     if (user) {
       setUsername(user.displayName || '');
+      setUserId(user.uid); // Store the userId
     }
   }, []);
 
   useEffect(() => {
     navigation.setOptions({
-      headerLeft: () => null, 
+      headerLeft: () => null,
       headerRight: () => (
         <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.menuButton}>
           <Image source={require('../assets/menu.png')} style={styles.menuButtonImage} />
@@ -70,12 +72,12 @@ export function HomeScreen({ navigation }) {
           <Text style={styles.title}>Welcome, {username || 'Guest'}!</Text>
         </View>
       </View>
-  
+
       <View style={styles.quoteContainer}>
         <Text style={styles.quote}>{quote}</Text>
       </View>
 
-       {/* Menu Modal */}
+      {/* Menu Modal */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -83,7 +85,6 @@ export function HomeScreen({ navigation }) {
         onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-         
             <Pressable onPress={handleLogout} style={styles.modalButton}>
               <Text style={styles.modalButtonText}>Logout</Text>
             </Pressable>
@@ -104,7 +105,7 @@ export function HomeScreen({ navigation }) {
         <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Home')}>
           <Image source={require('../assets/home.png')} style={styles.icon} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Activities')}>
+        <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Activities', { userId })}>
           <Image source={require('../assets/recommend.png')} style={styles.icon} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Community')}>
@@ -114,13 +115,13 @@ export function HomeScreen({ navigation }) {
     </View>
   );
 }
-  
+
 const styles = StyleSheet.create({
   container: {
-    flex: 1, 
-    padding: 20, 
-    justifyContent: 'center', 
-    alignItems: 'center', 
+    flex: 1,
+    padding: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: '#fff',
   },
   headerContainer: {
@@ -212,5 +213,4 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
   },
-  
 });
