@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { firestore } from './firebaseConfig';
 import { collection, query, where, getDocs, orderBy, limit, addDoc } from 'firebase/firestore';
-import axios from 'axios';
 
 const ActivityRecommendation = ({ route }) => {
   const { userId } = route?.params || {}; // Fallback to empty object
@@ -20,61 +19,72 @@ const ActivityRecommendation = ({ route }) => {
 
     const fetchSentiment = async () => {
         try {
-            console.log('Fetching journals for user ID:', userId);
-    
-            const today = new Date().toISOString().split('T')[0];
-    
-            const journalSnapshot = await getDocs(
-                query(
-                    collection(firestore, 'journals'),
-                    where('userId', '==', userId),
-                    where('date', '>=', today),
-                    orderBy('userId'),
-                    orderBy('date', 'desc'),
-                    limit(1)
-                )
-            );
-    
-            if (!journalSnapshot.empty) {
-                const journalData = journalSnapshot.docs[0].data();
-                console.log('Fetched journal data:', journalData);
-                setSentiment(journalData.sentiment);
-            } else {
-                console.log('No journals found for user:', userId);
-            }            
+          console.log('Fetching journals for user ID:', userId);
+      
+          // Get today's date in the format "Month Day, Year"
+          const today = new Date().toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          });
+      
+          const journalSnapshot = await getDocs(
+            query(
+              collection(firestore, 'journals'),
+              where('userId', '==', userId),
+              where('date', '==', today), // Change this line to '=='
+              orderBy('userId'),
+              orderBy('date', 'desc'),
+              limit(1)
+            )
+          );
+      
+          if (!journalSnapshot.empty) {
+            const journalData = journalSnapshot.docs[0].data();
+            console.log('Fetched journal data:', journalData);
+            setSentiment(journalData.sentiment);
+          } else {
+            console.log('No journals found for user:', userId);
+          }
         } catch (error) {
-            console.error('Error fetching sentiment:', error);
-            if (error.code === 'failed-precondition') {
-                console.log('This query requires an index. Please check the Firestore console.');
-            }
+          console.error('Error fetching sentiment:', error);
+          if (error.code === 'failed-precondition') {
+            console.log('This query requires an index. Please check the Firestore console.');
+          }
         }
-    };    
-    
+      };      
+
     fetchSentiment();
   }, [userId]);
 
   // Fetch recommendations from Flask API
   useEffect(() => {
     const fetchRecommendations = async () => {
-      if (sentiment) {
-        console.log('Fetching recommendations for:', { userId, sentiment }); // Log parameters
-        try {
-          const response = await axios.get(`http://192.168.1.11:5000/recommend`, {
-            params: {
-              userId: userId,
-              sentiment: sentiment,
-            },
-          });
-          console.log('Recommendations received:', response.data); // Log the response
-          setRecommendations(response.data.recommendations);
-        } catch (error) {
-          console.error('Error fetching recommendations:', error);
+        if (sentiment) {
+            console.log('Fetching recommendations for:', { userId, sentiment }); // Log parameters
+            try {
+                const response = await fetch(`http://192.168.1.11:5000/recommend`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ userId, sentiment }),
+                });                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                console.log('Recommendations received:', data); // Log the response
+                setRecommendations(data.recommendations);
+                console.log('Recommendations:', data.recommendations); // Log recommendations for debugging
+            } catch (error) {
+                console.error('Error fetching recommendations:', error);
+            }
         }
-      }
     };
 
     fetchRecommendations();
-  }, [sentiment, userId]);
+}, [sentiment, userId]);
 
   return (
     <View style={styles.container}>

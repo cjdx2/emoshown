@@ -55,12 +55,19 @@ def recommend():
     user_id = request.args.get('userId')
     sentiment = request.args.get('sentiment')
 
+    print("Received user ID:", user_id)
+    print("Received sentiment:", sentiment)  # Log sentiment
+
     # Get activities/resources based on sentiment
     activities_ref = db.collection('activities').where('emotionalImpact', 'array_contains', sentiment).stream()
     resources_ref = db.collection('resources').where('emotionalImpact', 'array_contains', sentiment).stream()
 
     activities = [act.to_dict() for act in activities_ref]
     resources = [res.to_dict() for res in resources_ref]
+
+    print("Fetched activities:", activities)  # Log fetched activities
+    print("Fetched resources:", resources)    # Log fetched resources
+
     activities_resources = pd.DataFrame(activities + resources)
 
     # Get recoratings data
@@ -68,7 +75,7 @@ def recommend():
 
     # Get recommendations
     recommendations = recommend_items(user_id, activities_resources, recoratings_df)
-    
+
     return jsonify({"recommendations": recommendations})
 
 if __name__ == '__main__':
