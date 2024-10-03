@@ -5,133 +5,152 @@
         "description": "A calming yoga session.",
         "type": "Activity",
         "emotionalImpact": ["positive", "neutral"],
-        "tags": ["relaxation", "mindfulness", "exercise"]
+        "tags": ["relaxation", "mindfulness", "exercise"],
+        "icon": "./assets/reco/yogaclass.png"
       },
       {
         "title": "Guided Meditation",
         "description": "A guided session for relaxation.",
         "type": "Activity",
         "emotionalImpact": ["positive", "neutral", "negative"],
-        "tags": ["stress relief", "mindfulness"]
+        "tags": ["stress relief", "mindfulness"],
+        "icon": "./assets/reco/guidedmeditation.png"
       },
       {
         "title": "Nature Walk",
         "description": "A peaceful walk in nature.",
         "type": "Activity",
         "emotionalImpact": ["positive", "neutral"],
-        "tags": ["exercise", "outdoor", "nature"]
+        "tags": ["exercise", "outdoor", "nature"],
+        "icon": "./assets/reco/naturewalk.png"
       },
       {
         "title": "Creative Writing",
         "description": "Express your thoughts through writing.",
         "type": "Activity",
         "emotionalImpact": ["positive", "neutral"],
-        "tags": ["creativity", "expression"]
+        "tags": ["creativity", "expression"],
+        "icon": "./assets/reco/creativewriting.png"
       },
       {
         "title": "Art Therapy",
         "description": "Use art as a form of expression and healing.",
         "type": "Activity",
         "emotionalImpact": ["positive", "neutral", "negative"],
-        "tags": ["creativity", "therapy"]
+        "tags": ["creativity", "therapy"],
+        "icon": "./assets/reco/arttherapy.png"
       },
       {
         "title": "Breathing Exercises",
         "description": "Simple breathing techniques to calm the mind.",
         "type": "Activity",
         "emotionalImpact": ["positive", "neutral"],
-        "tags": ["relaxation", "stress relief"]
+        "tags": ["relaxation", "stress relief"],
+        "icon": "./assets/reco/breathingexercises.png"
       },
       {
         "title": "Journaling",
         "description": "Write down your thoughts and feelings.",
         "type": "Activity",
         "emotionalImpact": ["positive", "neutral"],
-        "tags": ["self-reflection", "mental health"]
+        "tags": ["self-reflection", "mental health"],
+        "icon": "./assets/reco/journaling.png"
       },
       {
         "title": "Dance Class",
         "description": "An energetic dance session to boost mood.",
         "type": "Activity",
         "emotionalImpact": ["positive"],
-        "tags": ["exercise", "fun"]
+        "tags": ["exercise", "fun"],
+        "icon": "./assets/reco/danceclass.png"
       },
       {
         "title": "Cooking Healthy Meals",
         "description": "Prepare nutritious meals for mental and physical health.",
         "type": "Activity",
         "emotionalImpact": ["positive"],
-        "tags": ["nutrition", "wellness"]
+        "tags": ["nutrition", "wellness"],
+        "icon": "./assets/reco/cookinghealthymeals.png"
       },
       {
         "title": "Volunteer Work",
         "description": "Help others while boosting your own mood.",
         "type": "Activity",
         "emotionalImpact": ["positive"],
-        "tags": ["community", "giving back"]
+        "tags": ["community", "giving back"],
+        "icon": "./assets/reco/volunteerwork.png"
       },
       {
         "title": "Listening to Music",
         "description": "Relax with your favorite tunes.",
         "type": "Activity",
         "emotionalImpact": ["positive", "neutral"],
-        "tags": ["music", "relaxation"]
+        "tags": ["music", "relaxation"],
+        "icon": "./assets/reco/listeningtomusic.png"
       },
       {
         "title": "Gardening",
         "description": "Connect with nature while tending to plants.",
         "type": "Activity",
         "emotionalImpact": ["positive", "neutral"],
-        "tags": ["nature", "outdoor"]
+        "tags": ["nature", "outdoor"],
+        "icon": "./assets/reco/gardening.png"
       },
       {
         "title": "Mindful Walking",
         "description": "Walk while focusing on your surroundings.",
         "type": "Activity",
         "emotionalImpact": ["positive", "neutral"],
-        "tags": ["mindfulness", "exercise"]
+        "tags": ["mindfulness", "exercise"],
+        "icon": "./assets/reco/mindfulwalking.png"
       },
       {
         "title": "Attend a Support Group",
         "description": "Share experiences and support one another.",
         "type": "Activity",
         "emotionalImpact": ["positive", "neutral"],
-        "tags": ["community", "support"]
+        "tags": ["community", "support"],
+        "icon": "./assets/reco/supportgroup.png"
       },
       {
         "title": "Puzzle Solving",
         "description": "Engage your mind with puzzles or games.",
         "type": "Activity",
         "emotionalImpact": ["positive", "neutral"],
-        "tags": ["fun", "mental exercise"]
+        "tags": ["fun", "mental exercise"],
+        "icon": "./assets/reco/puzzle.png"
       },
       {
         "title": "Aromatherapy",
         "description": "Use essential oils to promote relaxation.",
         "type": "Activity",
         "emotionalImpact": ["positive", "neutral"],
-        "tags": ["relaxation", "therapy"]
+        "tags": ["relaxation", "therapy"],
+        "icon": "./assets/reco/aroma.png"
       },
       {
         "title": "Play with Pets",
         "description": "Spend time with pets for emotional support.",
         "type": "Activity",
         "emotionalImpact": ["positive"],
-        "tags": ["animals", "companionship"]
+        "tags": ["animals", "companionship"],
+        "icon": "./assets/reco/pets.png"
       },
       {
         "title": "Reading Inspirational Books",
         "description": "Read books that uplift and motivate you.",
         "type": "Activity",
         "emotionalImpact": ["positive"],
-        "tags": ["reading", "inspiration"]
+        "tags": ["reading", "inspiration"],
+        "icon": "./assets/reco/books.png"
       },
       {
         "title": "Take a Relaxing Bath",
         "description": "Enjoy a warm bath to unwind.",
         "type": "Activity",
         "emotionalImpact": ["positive", "neutral"],
-        "tags": ["self-care", "relaxation"]
+        "tags": ["self-care", "relaxation"],
+        "icon": "./assets/reco/bath.png"
       },
       {
         "title": "How to Meditate",
