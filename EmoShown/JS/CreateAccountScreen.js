@@ -17,7 +17,7 @@ export function CreateAccountScreen({ navigation }) {
     }
 
     if (!fullName.trim()) {
-      Alert.alert("Error", "Full Name is required");
+      Alert.alert("Error", "Name is required");
       return;
     }
 
@@ -51,7 +51,7 @@ export function CreateAccountScreen({ navigation }) {
       
       <TextInput
         style={styles.input}
-        placeholder="Full Name"
+        placeholder="Name"
         value={fullName}
         onChangeText={setFullName}
       />
