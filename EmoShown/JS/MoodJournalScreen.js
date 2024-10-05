@@ -17,10 +17,18 @@ export function MoodJournalScreen({ navigation }) {
   const [negativeModalVisible, setNegativeModalVisible] = useState(false);
   const [imageUri, setImageUri] = useState(null);
   const [selectedEmotion, setSelectedEmotion] = useState('');
-  const [historyModalVisible, setHistoryModalVisible] = useState(false);
-  const [journalHistory, setJournalHistory] = useState([]);
   const [sentimentResult, setSentimentResult] = useState(null); // State for sentiment analysis result
   const [weeklyCheckInVisible, setWeeklyCheckInVisible] = useState(false); // Weekly Check-In state
+  const [username, setUsername] = useState('');
+  const [userId, setUserId] = useState('');
+
+    useEffect(() => {
+        const user = auth.currentUser;
+        if (user) {
+          setUsername(user.displayName || '');
+          setUserId(user.uid); // Store the userId
+        }
+      }, []);
 
   const moodIcons = {
     happy: require('../assets/positive/happiness.png'),
@@ -37,7 +45,7 @@ export function MoodJournalScreen({ navigation }) {
     worried: require('../assets/negative/anxiety.png'),
   };
 
-  const BACKEND_URL = 'http://192.168.1.9:5000/analyze'; // pc url
+  const BACKEND_URL = 'http://192.168.1.7:5000/analyze'; // pc url
 
   useEffect(() => {
     const updateDate = () => {
@@ -397,7 +405,7 @@ const handleWeeklyCheckIn = async () => {
         <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Home')}>
           <Image source={require('../assets/home.png')} style={styles.icon} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Activities')}>
+        <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Activities', { userId })}>
           <Image source={require('../assets/recommend.png')} style={styles.icon} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Community')}>

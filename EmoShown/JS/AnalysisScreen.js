@@ -31,6 +31,16 @@ export function AnalysisScreen({ navigation }) {
     const [checkins, setCheckins] = useState([]);
     const [loading, setLoading] = useState(true);
     const db = getFirestore();
+    const [username, setUsername] = useState('');
+    const [userId, setUserId] = useState('');
+
+    useEffect(() => {
+        const user = auth.currentUser;
+        if (user) {
+          setUsername(user.displayName || '');
+          setUserId(user.uid); // Store the userId
+        }
+      }, []);
 
     useEffect(() => {
         const fetchCheckins = async () => {
@@ -141,39 +151,76 @@ export function AnalysisScreen({ navigation }) {
                 return daysOfWeek.indexOf(a.day) - daysOfWeek.indexOf(b.day);
             });
         
-            console.log('Sorted Mood History:', sortedData);
-        
             setMoodHistory(sortedData);
-        
-            const todayMood = sortedData.find(item => item.day === format(new Date(), 'E'));
+            
+            // Always check today's mood separately
+            const todayFormatted = format(today, 'MMMM d, yyyy');
+            const todayMood = sortedData.find(item => item.date === todayFormatted);
             console.log('Today Mood:', todayMood);
+    
             if (todayMood) {
                 setMoodToday(todayMood.emotion);
-                const yesterdayMood = sortedData[1] || { sentiment: 0 };
+                const yesterdayMood = sortedData[sortedData.length - 2] || { sentiment: 0 };
                 const progress = todayMood.sentiment - yesterdayMood.sentiment;
                 setMoodProgress(progress);
             } else {
-                console.log('No mood data available for today.');
                 setMoodToday('No mood data available.');
                 setMoodProgress(0);
             }
         };        
     
         fetchMoodHistory();
-    }, []);            
+    }, []);                    
 
     // ANOMALY DETECTION
     useEffect(() => {
-      if (moodHistory.length > 0) {
-          detectAnomalies(moodHistory);
-      }
-    }, [moodHistory]);
-
+        const fetchLongerMoodHistory = async () => {
+            const userId = auth.currentUser.uid;
+            const moodsRef = collection(firestore, 'journals');
+    
+            const today = startOfDay(new Date());
+            let last30DaysData = [];
+    
+            // Fetch mood data for the past 30 days
+            for (let i = 0; i < 30; i++) {
+                const day = subDays(today, i);
+                const dayFormatted = format(day, 'MMMM d, yyyy');
+                const dayQuery = query(
+                    moodsRef,
+                    where('userId', '==', userId),
+                    where('date', '==', dayFormatted)
+                );
+                const daySnapshot = await getDocs(dayQuery);
+    
+                let emotion = 'blank';
+                let sentiment = 0;
+    
+                if (!daySnapshot.empty) {
+                    const journalData = daySnapshot.docs[0].data();
+                    emotion = journalData.emotion || 'blank';
+                    sentiment = journalData.sentiment ? journalData.sentiment.compound : 0;
+                }
+    
+                last30DaysData.push({
+                    day: format(day, 'E'),
+                    date: dayFormatted,
+                    emotion: emotion,
+                    sentiment: sentiment
+                });
+            }
+    
+            // Now that we have mood data for 30 days, run anomaly detection
+            detectAnomalies(last30DaysData);
+        };
+    
+        fetchLongerMoodHistory();
+    }, []);
+    
     const detectAnomalies = async (history) => {
         try {
             console.log('Sending mood history for anomaly detection:', JSON.stringify(history));
     
-            const response = await fetch('http://192.168.1.9:5000/detect_anomalies', { //url
+            const response = await fetch('http://192.168.1.7:5000/detect_anomalies', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -189,18 +236,21 @@ export function AnalysisScreen({ navigation }) {
             console.log('Anomalies detected:', data);
     
             if (Array.isArray(data) && data.length > 0) {
-                setAnomalies(data);
-                Alert.alert(
-                    'Anomaly Detected',
-                    'It looks like there was a change in your mood recently. Would you like to take a moment to reflect on it?',
-                    [
-                        { text: 'No, I’m okay', onPress: () => console.log('User is okay'), style: 'cancel' },
-                        { 
-                          text: 'Yes, take a moment', 
-                          onPress: () => navigation.navigate('Activities')
-                        }
-                      ]
-                );                
+                const nonZeroAnomalies = data.filter(anomaly => anomaly.change !== 0);
+                if (nonZeroAnomalies.length > 0) {
+                    setAnomalies(nonZeroAnomalies);
+                    Alert.alert(
+                        'Anomaly Detected',
+                        'It looks like there was a change in your mood recently. Would you like to take a moment to reflect on it?',
+                        [
+                            { text: 'No, I’m okay', onPress: () => console.log('User is okay'), style: 'cancel' },
+                            { 
+                              text: 'Yes, take a moment', 
+                              onPress: () => navigation.navigate('Activities')
+                            }
+                        ]
+                    );
+                }
             } else {
                 console.error('No anomalies detected or unexpected data format received:', data);
                 setAnomalies([]);
@@ -208,7 +258,7 @@ export function AnalysisScreen({ navigation }) {
         } catch (error) {
             console.error('Error fetching anomalies:', error);
         }
-    };    
+    };            
 
     return (
         <View style={styles.container}>
@@ -258,14 +308,26 @@ export function AnalysisScreen({ navigation }) {
             ) : (
                 <View style={styles.checkinsContainer}>
                     {checkins.length > 0 ? (
-                        checkins.map((item) => (
-                            <View key={item.id} style={styles.checkinBox}>
-                                <Text style={styles.checkinText}>Check-In Date: {item.timestamp.toDate().toDateString()}</Text>
-                                <Text style={styles.checkinText}>Depression Severity: {item.depressionSeverity}</Text>
-                                <Text style={styles.checkinText}>Anxiety Severity: {item.anxietySeverity}</Text>
-                                <Text style={styles.checkinText}>Stress Severity: {item.stressSeverity}</Text>
-                            </View>
-                        ))
+                        // Sort checkins by timestamp (most recent first) and display only the first item
+                        checkins
+                            .sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate()) // Sort by timestamp
+                            .slice(0, 1) // Get only the most recent check-in
+                            .map((item) => (
+                                <View key={item.id} style={styles.checkinBox}>
+                                    <Text style={styles.checkinText}>
+                                        Check-In Date: {item.timestamp.toDate().toDateString()}
+                                    </Text>
+                                    <Text style={styles.checkinText}>
+                                        Depression Severity: {item.depressionSeverity}
+                                    </Text>
+                                    <Text style={styles.checkinText}>
+                                        Anxiety Severity: {item.anxietySeverity}
+                                    </Text>
+                                    <Text style={styles.checkinText}>
+                                        Stress Severity: {item.stressSeverity}
+                                    </Text>
+                                </View>
+                            ))
                     ) : (
                         <Text>No check-ins available.</Text>
                     )}
@@ -322,7 +384,7 @@ export function AnalysisScreen({ navigation }) {
               <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Home')}>
                 <Image source={require('../assets/home.png')} style={styles.icon} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Activities')}>
+              <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Activities', { userId })}>
                 <Image source={require('../assets/recommend.png')} style={styles.icon} />
               </TouchableOpacity>
               <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Community')}>

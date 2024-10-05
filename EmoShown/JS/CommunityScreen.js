@@ -1,9 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Image, ScrollView, Linking, StyleSheet, Modal, Pressable } from 'react-native';
+import { auth, firestore, storage } from './firebaseConfig'; 
 
 export const CommunityScreen = ({ navigation }) => {
   const [currentDate, setCurrentDate] = useState('');
   const [modalVisible, setModalVisible] = useState(false); // Added state for modal
+  const [username, setUsername] = useState('');
+  const [userId, setUserId] = useState('');
+
+    useEffect(() => {
+        const user = auth.currentUser;
+        if (user) {
+          setUsername(user.displayName || '');
+          setUserId(user.uid); // Store the userId
+        }
+      }, []);
 
   const handleLinkPress = (url) => {
     Linking.openURL(url);
@@ -108,7 +119,7 @@ export const CommunityScreen = ({ navigation }) => {
         <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Home')}>
           <Image source={require('../assets/home.png')} style={styles.icon} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Activities')}>
+        <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Activities', { userId })}>
           <Image source={require('../assets/recommend.png')} style={styles.icon} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Community')}>
