@@ -15,20 +15,18 @@ export function IntroductionScreen({ navigation }) {
   ];
 
   const handleNext = async () => {
-    if (currentSlide === slides.length - 1 && videoRef.current) {
-      // If currently on the App Preview slide, pause the video before navigating
-      await videoRef.current.pauseAsync();
-    }
-  
-    if (currentSlide === -1) {
-      setCurrentSlide(0);
-    } else if (currentSlide < slides.length - 1) {
-      setCurrentSlide(currentSlide + 1);
+    // If it's the last slide, pause the video and navigate to Login
+    if (currentSlide === slides.length - 1) {
+      if (videoRef.current) {
+        await videoRef.current.pauseAsync();  // Pause video
+      }
+      navigation.navigate('Login');  // Navigate to Login screen
     } else {
-      // At the last slide (App Preview), navigate to Login
-      navigation.navigate('Login');
+      // Increment the slide until reaching the last one
+      setCurrentSlide(currentSlide + 1);
     }
   };
+  
 
   const togglePlayback = async () => {
     const status = await videoRef.current.getStatusAsync();

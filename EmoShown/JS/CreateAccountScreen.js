@@ -21,32 +21,34 @@ export function CreateAccountScreen({ navigation }) {
       Alert.alert("Error", "Passwords do not match");
       return;
     }
-
+  
     if (!fullName.trim()) {
       Alert.alert("Error", "Name is required");
       return;
     }
-
+  
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-
+  
       await updateProfile(user, {
         displayName: fullName
       });
-
+  
       await setDoc(doc(firestore, "users", user.uid), {
         fullName,
         email,
         createdAt: new Date().toISOString()
       });
-
+  
       Alert.alert("Success", "Account created successfully");
-      navigation.navigate('Login');
+      // Navigate to the IntroductionScreen directly after the privacy acceptance
+      navigation.navigate('Introduction');
     } catch (error) {
       Alert.alert("Error", error.message);
     }
   };
+  
 
   return (
     <View style={styles.container}>

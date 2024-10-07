@@ -220,7 +220,7 @@ export function AnalysisScreen({ navigation }) {
         try {
             console.log('Sending mood history for anomaly detection:', JSON.stringify(history));
     
-            const response = await fetch('http://192.168.1.7:5000/detect_anomalies', {
+            const response = await fetch('http://192.168.1.45:5000/detect_anomalies', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -243,13 +243,13 @@ export function AnalysisScreen({ navigation }) {
                         'Anomaly Detected',
                         'It looks like there was a change in your mood recently. Would you like to take a moment to reflect on it?',
                         [
-                            { text: 'No, I’m okay', onPress: () => console.log('User is okay'), style: 'cancel' },
-                            { 
-                              text: 'Yes, take a moment', 
-                              onPress: () => navigation.navigate('Activities')
-                            }
+                          { text: 'No, I’m okay', onPress: () => console.log('User is okay'), style: 'cancel' },
+                          { 
+                            text: 'Yes, take a moment', 
+                            onPress: () => navigation.navigate('Activities', { userId }) // Pass userId here
+                          }
                         ]
-                    );
+                      );
                 }
             } else {
                 console.error('No anomalies detected or unexpected data format received:', data);
