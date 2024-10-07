@@ -209,18 +209,19 @@ export function AnalysisScreen({ navigation }) {
                 });
             }
     
-            // Now that we have mood data for 30 days, run anomaly detection
+            last30DaysData.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
             detectAnomalies(last30DaysData);
         };
     
         fetchLongerMoodHistory();
-    }, []);
+    }, []);    
     
     const detectAnomalies = async (history) => {
         try {
             console.log('Sending mood history for anomaly detection:', JSON.stringify(history));
     
-            const response = await fetch('http://192.168.1.45:5000/detect_anomalies', {
+            const response = await fetch('http://192.168.1.7:5000/detect_anomalies', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -241,16 +242,14 @@ export function AnalysisScreen({ navigation }) {
                     setAnomalies(nonZeroAnomalies);
                     Alert.alert(
                         'Anomaly Detected',
-                        'It looks like there was a change in your mood recently. Would you like to take a moment to reflect on it?',
+                        'There has been a change in your mood recently. Please take a moment to reflect on it.',
                         [
-                          { text: 'No, I’m okay', onPress: () => console.log('User is okay'), style: 'cancel' },
-                          { 
-                            text: 'Yes, take a moment', 
-                            onPress: () => navigation.navigate('Activities', { userId }) // Pass userId here
-                          }
+                            { 
+                                text: 'I Understand', 
+                            }
                         ]
-                      );
-                }
+                    );
+                }                
             } else {
                 console.error('No anomalies detected or unexpected data format received:', data);
                 setAnomalies([]);
