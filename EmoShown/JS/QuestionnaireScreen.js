@@ -300,6 +300,10 @@ const prevSlide = () => {
           <TouchableOpacity style={styles.nextButton} onPress={() => setShowQuestionnaire(true)}>
             <Text style={styles.nextButtonText}>Proceed</Text>
           </TouchableOpacity>
+             {/* Credits */}
+<Text style={styles.creditsText}>
+  Lovibond, S.H. & Lovibond, P.F. (1995). Manual for the Depression Anxiety & Stress Scales. (2nd Ed.) Sydney: Psychology Foundation.
+</Text>
         </View>
       )}
     
@@ -348,7 +352,7 @@ const prevSlide = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'flex-start', // Start from top
+    justifyContent: 'center', // Start from top
     alignItems: 'stretch', // Allow children to stretch horizontally
     backgroundColor: '#fff',
     padding: 20,
@@ -505,5 +509,12 @@ const styles = StyleSheet.create({
   modalButtonText: {
     color: '#fff',
     fontSize: 16,
+  },
+  creditsText: {
+    marginTop: 20, // Add some spacing above the credits
+    fontSize: 12, // Make the font smaller
+    color: '#666', // A lighter color for the credits text
+    textAlign: 'center', // Center align the text
+    paddingHorizontal: 10, // Add horizontal padding for readability
   },
 });

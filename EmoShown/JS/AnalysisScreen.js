@@ -221,7 +221,7 @@ export function AnalysisScreen({ navigation }) {
         try {
             console.log('Sending mood history for anomaly detection:', JSON.stringify(history));
     
-            const response = await fetch('http://192.168.1.7:5000/detect_anomalies', {
+            const response = await fetch('http://172.20.122.232:5000/detect_anomalies', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
