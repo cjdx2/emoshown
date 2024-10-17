@@ -6,6 +6,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { doc, setDoc, getDoc } from 'firebase/firestore'; 
 import * as ImagePicker from 'expo-image-picker';
 import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
+import * as Notifications from 'expo-notifications';
 
 export function MoodJournalScreen({ navigation }) {
   const [mood, setMood] = useState(null);
@@ -22,6 +23,36 @@ export function MoodJournalScreen({ navigation }) {
   const [username, setUsername] = useState('');
   const [userId, setUserId] = useState('');
 
+  useEffect(() => {
+    const requestPermissions = async () => {
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status !== 'granted') {
+        alert('Notification permissions are required for this app to work correctly.');
+      }
+    };
+  
+    requestPermissions();
+  }, []);
+  const scheduleDailyNotification = async () => {
+    await Notifications.cancelAllScheduledNotificationsAsync(); // Cancel existing notifications to avoid duplicates
+  
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "Daily Mood Check-in",
+        body: "Don't forget to log your mood today!",
+      },
+      trigger: {
+        hour: 9, // Set the hour (24-hour format) for the notification, e.g., 9 AM
+        minute: 0, // Set the minute
+        repeats: true,
+      },
+    });
+  };
+  
+  useEffect(() => {
+    scheduleDailyNotification(); // Schedule the notification when the component mounts
+  }, []);
+  
     useEffect(() => {
         const user = auth.currentUser;
         if (user) {
@@ -45,7 +76,7 @@ export function MoodJournalScreen({ navigation }) {
     worried: require('../assets/negative/anxiety.png'),
   };
 
-  const BACKEND_URL = 'http://172.20.122.232:5000/analyze'; // pc url
+  const BACKEND_URL = 'http://192.168.1.10:5000/analyze'; // pc url
 
   useEffect(() => {
     const updateDate = () => {
@@ -560,7 +591,7 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 10,
+    marginVertical: 20,
   },
   currentMoodIcon: {
     width: 70,
@@ -659,7 +690,7 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'flex-start',
     padding: 10,
-    height: 250,
+    height: 150,
     width: '100%',
     position: 'relative',
     borderColor: '#000',

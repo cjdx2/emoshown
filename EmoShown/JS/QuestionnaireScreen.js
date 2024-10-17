@@ -289,22 +289,35 @@ const prevSlide = () => {
   );
 };
 
-  return (
-    <View style={styles.container}>
-      {showQuestionnaire ? renderQuestionnaire() : (
-        <View style={styles.container}>
-          <Text style={styles.title}>DASS21 Questionnaire</Text>
-          <Text style={styles.instructions}>
-            Please read each statement and choose a number (0, 1, 2, or 3) indicating how much the statement applied to you over the past week.
-          </Text>
-          <TouchableOpacity style={styles.nextButton} onPress={() => setShowQuestionnaire(true)}>
-            <Text style={styles.nextButtonText}>Proceed</Text>
-          </TouchableOpacity>
-             {/* Credits */}
-<Text style={styles.creditsText}>
-  Lovibond, S.H. & Lovibond, P.F. (1995). Manual for the Depression Anxiety & Stress Scales. (2nd Ed.) Sydney: Psychology Foundation.
-</Text>
-        </View>
+return (
+  <View style={styles.container}>
+    {showQuestionnaire ? renderQuestionnaire() : (
+      <View style={styles.container}>
+        <Text style={styles.title}>DASS21 Questionnaire</Text>
+        <Text style={styles.instructions}>
+          Please read each statement and choose a number (0, 1, 2, or 3) indicating how much the statement applied to you over the past week.
+          {'\n\n'}
+          There are no right or wrong answers. Do not spend too much time on any statement.
+          {'\n\n'}
+          The rating scale is as follows:
+          {'\n'}
+          0 Did not apply to me at all{'\n'}
+          1 Applied to me to some degree, or some of the time{'\n'}
+          2 Applied to me to a considerable degree or a good part of time{'\n'}
+          3 Applied to me very much or most of the time
+        </Text>
+        {/* New question above the Proceed button */}
+        <Text style={styles.questionText}>
+          This will take a few minutes, are you ready to answer?
+        </Text>
+        <TouchableOpacity style={styles.nextButton} onPress={() => setShowQuestionnaire(true)}>
+          <Text style={styles.nextButtonText}>Proceed</Text>
+        </TouchableOpacity>
+        {/* Credits */}
+        <Text style={styles.creditsText}>
+          Lovibond, S.H. & Lovibond, P.F. (1995). Manual for the Depression Anxiety & Stress Scales. (2nd Ed.) Sydney: Psychology Foundation.
+        </Text>
+      </View>
       )}
     
 
@@ -517,4 +530,10 @@ const styles = StyleSheet.create({
     textAlign: 'center', // Center align the text
     paddingHorizontal: 10, // Add horizontal padding for readability
   },
+  questionText: {
+    fontSize: 12,
+    textAlign: 'center',
+    color: 'black',
+  },
+  
 });

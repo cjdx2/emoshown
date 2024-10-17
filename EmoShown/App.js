@@ -13,6 +13,8 @@ import { CommunityScreen } from './JS/CommunityScreen';
 import ActivityRecommendation from './JS/ActivityRecommendation';
 import { Provider as PaperProvider } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Notifications from 'expo-notifications'; // Import Notifications
+import { Platform } from 'react-native'; // Import Platform
 
 const Stack = createStackNavigator();
 
@@ -26,7 +28,17 @@ export default function App() {
         setHasAcceptedPrivacy(true);
       }
     });
-  }, []);
+
+    // Configure the notification channel for Android
+    if (Platform.OS === 'android') {
+      Notifications.setNotificationChannelAsync('default', {
+        name: 'default',
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#FF231F7C',
+      });
+    }
+  }, []); // Empty dependency array to ensure it runs only once
 
   return (
     <PaperProvider>

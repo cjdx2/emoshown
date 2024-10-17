@@ -147,15 +147,16 @@ const styles = StyleSheet.create({
   },
   quoteContainer: {
     backgroundColor: '#f0f0f0',
-    padding: 20,
-    borderRadius: 10,
+    padding: 70,
+    borderRadius: 15,
     marginBottom: 20,
     borderColor: '#000',
-    borderWidth: 1,
+    borderWidth: 2,
     alignItems: 'center', // Center the quote text
   },
   quote: {
     textAlign: 'center', // Center the text within the quote container
+    fontSize: 25,
   },
   bottomNav: {
     position: 'absolute',
