@@ -172,92 +172,117 @@ export function AnalysisScreen({ navigation }) {
         fetchMoodHistory();
     }, []);                    
 
-    // ANOMALY DETECTION
-    useEffect(() => {
-        const fetchLongerMoodHistory = async () => {
-            const userId = auth.currentUser.uid;
-            const moodsRef = collection(firestore, 'journals');
-    
-            const today = startOfDay(new Date());
-            let last30DaysData = [];
-    
-            // Fetch mood data for the past 30 days
-            for (let i = 0; i < 30; i++) {
-                const day = subDays(today, i);
-                const dayFormatted = format(day, 'MMMM d, yyyy');
-                const dayQuery = query(
-                    moodsRef,
-                    where('userId', '==', userId),
-                    where('date', '==', dayFormatted)
-                );
-                const daySnapshot = await getDocs(dayQuery);
-    
-                let emotion = 'blank';
-                let sentiment = 0;
-    
-                if (!daySnapshot.empty) {
-                    const journalData = daySnapshot.docs[0].data();
-                    emotion = journalData.emotion || 'blank';
-                    sentiment = journalData.sentiment ? journalData.sentiment.compound : 0;
-                }
-    
-                last30DaysData.push({
-                    day: format(day, 'E'),
-                    date: dayFormatted,
-                    emotion: emotion,
-                    sentiment: sentiment
-                });
+// ANOMALY DETECTION
+useEffect(() => {
+    const fetchLongerMoodHistory = async () => {
+        const userId = auth.currentUser.uid;
+        const journalsRef = collection(firestore, 'journals');
+
+        const today = startOfDay(new Date());
+        let last30DaysData = [];
+
+        // Fetch mood data for the past 30 days
+        for (let i = 0; i < 30; i++) {
+            const day = subDays(today, i);
+            const dayFormatted = format(day, 'MMMM d, yyyy');
+            const dayQuery = query(
+                journalsRef,
+                where('userId', '==', userId),
+                where('date', '==', dayFormatted)
+            );
+            const daySnapshot = await getDocs(dayQuery);
+
+            let emotion = 'blank';
+            let sentiment = 0;
+
+            if (!daySnapshot.empty) {
+                const journalData = daySnapshot.docs[0].data();
+                emotion = journalData.emotion || 'blank';
+                sentiment = journalData.sentiment ? journalData.sentiment.compound : 0;
             }
-    
-            last30DaysData.sort((a, b) => new Date(b.date) - new Date(a.date));
-    
-            detectAnomalies(last30DaysData);
-        };
-    
-        fetchLongerMoodHistory();
-    }, []);    
-    
-    const detectAnomalies = async (history) => {
-        try {
-            console.log('Sending mood history for anomaly detection:', JSON.stringify(history));
-    
-            const response = await fetch('http://192.168.1.10:5000/detect_anomalies', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(history),
+
+            last30DaysData.push({
+                day: format(day, 'E'),
+                date: dayFormatted,
+                emotion: emotion,
+                sentiment: sentiment
             });
-    
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-    
-            const data = await response.json();
-            console.log('Anomalies detected:', data);
-    
-            if (Array.isArray(data) && data.length > 0) {
-                const nonZeroAnomalies = data.filter(anomaly => anomaly.change !== 0);
-                if (nonZeroAnomalies.length > 0) {
-                    setAnomalies(nonZeroAnomalies);
-                    Alert.alert(
-                        'Anomaly Detected',
-                        'There has been a change in your mood recently. Please take a moment to reflect on it.',
-                        [
-                            { 
-                                text: 'I Understand', 
-                            }
-                        ]
-                    );
-                }                
-            } else {
-                console.error('No anomalies detected or unexpected data format received:', data);
-                setAnomalies([]);
-            }
-        } catch (error) {
-            console.error('Error fetching anomalies:', error);
         }
-    };            
+
+        last30DaysData.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        detectAnomalies(last30DaysData);
+    };
+
+    fetchLongerMoodHistory();
+}, []);
+
+const detectAnomalies = async (history) => {
+    try {
+        console.log('Sending mood history for anomaly detection:', JSON.stringify(history));
+
+        const response = await fetch('http://192.168.1.16:5000/detect_anomalies', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(history),
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Anomalies detected:', data);
+
+        if (Array.isArray(data) && data.length > 0) {
+            const nonZeroAnomalies = data.filter(anomaly => anomaly.change !== 0);
+            if (nonZeroAnomalies.length > 0) {
+                // Update anomalies to include the actual mood image
+                const anomaliesWithMoodImages = nonZeroAnomalies.map(anomaly => {
+                    const detectedDate = anomaly.date;
+                    const moodData = history.find(item => item.date === detectedDate);
+
+                    // Ensure the moodData is available
+                    if (moodData) {
+                        // Get the mood image based on the detected emotion from Firestore data
+                        const moodImage = moodImages[moodData.emotion] || moodImages.blank;
+                        
+                        return {
+                            ...anomaly,
+                            moodImage: moodImage,
+                            mood: moodData.emotion || 'blank',
+                        };
+                    } else {
+                        // Fallback if no mood data is found
+                        return {
+                            ...anomaly,
+                            moodImage: moodImages.blank,
+                            mood: 'blank',
+                        };
+                    }
+                });
+                setAnomalies(anomaliesWithMoodImages);
+                Alert.alert(
+                    'Anomaly Detected',
+                    'There has been a change in your mood recently. Please take a moment to reflect on it.',
+                    [
+                        {
+                            text: 'I Understand',
+                        }
+                    ]
+                );
+            }
+        } else {
+            console.error('No anomalies detected or unexpected data format received:', data);
+            setAnomalies([]);
+        }
+    } catch (error) {
+        console.error('Error fetching anomalies:', error);
+    }
+};
+
 
     return (
         <View style={styles.container}>
@@ -338,21 +363,28 @@ export function AnalysisScreen({ navigation }) {
                 <Text style={styles.sectionHeader}>Anomalies Detected</Text>
                 {anomalies.length > 0 ? (
                     anomalies.map((anomaly, index) => (
-                        <Text key={index} style={styles.anomalyText}>
-                            {anomaly.day ? (
-                                <>
-                                    <Text>On </Text>
-                                    <Text style={styles.redText}>{anomaly.day}</Text>
-                                    <Text>{":\nYour Mood Changed by "}</Text>
-                                    <Text style={styles.redText}>{anomaly.change}%</Text>
-                                </>
-                            ) : 'No anomalies detected.'}
-                        </Text>
+                        <View key={index} style={styles.anomalyItem}>
+                            <Image
+                                source={moodImages[anomaly.mood] || moodImages.blank}
+                                style={styles.anomalyIcon}
+                            />
+                            <Text style={styles.anomalyText}>
+                                {anomaly.day ? (
+                                    <>
+                                        <Text>On </Text>
+                                        <Text style={styles.redText}>{anomaly.day}</Text>
+                                        <Text>{":\nYour Mood Changed by "}</Text>
+                                        <Text style={styles.redText}>{anomaly.change}%</Text>
+                                    </>
+                                ) : 'No anomalies detected.'}
+                            </Text>
+                        </View>
                     ))
                 ) : (
                     <Text>No anomalies detected.</Text>
                 )}
             </View>
+
 
             {/* Menu Modal */}
             <Modal
@@ -448,12 +480,17 @@ const styles = StyleSheet.create({
         marginBottom: 5,
     },
     anomaliesContainer: {
-        padding: 10,
-        backgroundColor: '#f9f9f9',
+        padding: 15,
+        backgroundColor: '#fff',
         borderRadius: 10,
-        marginBottom: 10,
+        marginBottom: 15,
         borderWidth: 1,
         borderColor: '#ddd',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 5,
+        elevation: 3,
     },
     sectionHeader: {
         fontSize: 18,
@@ -532,4 +569,15 @@ const styles = StyleSheet.create({
     redText: {
         color: 'red',
     },
+    anomalyItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    anomalyIcon: {
+        width: 30,
+        height: 30,
+        marginRight: 10,
+    },
+    
 });
