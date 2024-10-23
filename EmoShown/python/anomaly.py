@@ -54,8 +54,8 @@ def preprocess_data(data):
         # Concatenate the encoded emotions with the original DataFrame
         df = pd.concat([df, encoded_emotion_df], axis=1)
         
-        # Drop the original 'emotion' column as it's no longer needed
-        df = df.drop(columns=['emotion'])
+        # You can choose to keep the original emotion column or drop it based on your needs
+        # df = df.drop(columns=['emotion'])  # Remove this line if you want to keep it
 
     return df
 
@@ -86,13 +86,14 @@ def detect_anomalies(data):
     df['anomaly'] = model.fit_predict(df[['sentiment']])
 
     # Anomalies are marked as -1
-    anomalies = df[df['anomaly'] == -1][['date', 'sentiment_change']]
+    anomalies = df[df['anomaly'] == -1][['date', 'sentiment_change', 'emotion']]  # Keep the emotion
 
     # Convert anomalies to readable format
     anomalies['day'] = anomalies['date'].dt.strftime('%A, %B %d, %Y')
     anomalies['change'] = (anomalies['sentiment_change'] * 100).round(2)  # Convert change to percentage
 
-    return anomalies[['day', 'change']]
+    # Prepare the response to include emotion
+    return anomalies[['day', 'change', 'emotion']]  # Include emotion in response
 
 @app.route('/detect_anomalies', methods=['POST'])
 def anomaly_detection_route():

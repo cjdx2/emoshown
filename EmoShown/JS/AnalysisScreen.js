@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Modal, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Modal, Pressable, Alert, ScrollView } from 'react-native';
 import { signOut } from 'firebase/auth'; 
 import { auth, firestore } from './firebaseConfig';
-import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
-import { format, subDays, startOfDay } from 'date-fns';
+import { getFirestore, collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { format, subDays, startOfDay, parse } from 'date-fns';
 
 const moodImages = {
     happy: require('../assets/positive/happiness.png'),
@@ -156,7 +156,7 @@ export function AnalysisScreen({ navigation }) {
             // Always check today's mood separately
             const todayFormatted = format(today, 'MMMM d, yyyy');
             const todayMood = sortedData.find(item => item.date === todayFormatted);
-            console.log('Today Mood:', todayMood);
+            console.log('Mood Today:', todayMood);
     
             if (todayMood) {
                 setMoodToday(todayMood.emotion);
@@ -219,9 +219,7 @@ useEffect(() => {
 
 const detectAnomalies = async (history) => {
     try {
-        console.log('Sending mood history for anomaly detection:', JSON.stringify(history));
-
-        const response = await fetch('http://192.168.1.16:5000/detect_anomalies', {
+        const response = await fetch('http://192.168.1.6:5000/detect_anomalies', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -234,55 +232,22 @@ const detectAnomalies = async (history) => {
         }
 
         const data = await response.json();
-        console.log('Anomalies detected:', data);
+        console.log('Anomalies Detected:', data);
 
-        if (Array.isArray(data) && data.length > 0) {
-            const nonZeroAnomalies = data.filter(anomaly => anomaly.change !== 0);
-            if (nonZeroAnomalies.length > 0) {
-                // Update anomalies to include the actual mood image
-                const anomaliesWithMoodImages = nonZeroAnomalies.map(anomaly => {
-                    const detectedDate = anomaly.date;
-                    const moodData = history.find(item => item.date === detectedDate);
+        setAnomalies(data.map(anomaly => {
+            const parsedDate = parse(anomaly.day, 'EEEE, MMMM dd, yyyy', new Date());
+            return {
+                day: format(parsedDate, 'MMM dd'), // Format to "Aug 21"
+                emoji: moodImages[anomaly.emotion] || moodImages.blank,
+                change: anomaly.change,
+                emotion: anomaly.emotion
+            };
+        }));
 
-                    // Ensure the moodData is available
-                    if (moodData) {
-                        // Get the mood image based on the detected emotion from Firestore data
-                        const moodImage = moodImages[moodData.emotion] || moodImages.blank;
-                        
-                        return {
-                            ...anomaly,
-                            moodImage: moodImage,
-                            mood: moodData.emotion || 'blank',
-                        };
-                    } else {
-                        // Fallback if no mood data is found
-                        return {
-                            ...anomaly,
-                            moodImage: moodImages.blank,
-                            mood: 'blank',
-                        };
-                    }
-                });
-                setAnomalies(anomaliesWithMoodImages);
-                Alert.alert(
-                    'Anomaly Detected',
-                    'There has been a change in your mood recently. Please take a moment to reflect on it.',
-                    [
-                        {
-                            text: 'I Understand',
-                        }
-                    ]
-                );
-            }
-        } else {
-            console.error('No anomalies detected or unexpected data format received:', data);
-            setAnomalies([]);
-        }
     } catch (error) {
         console.error('Error fetching anomalies:', error);
     }
 };
-
 
     return (
         <View style={styles.container}>
@@ -362,29 +327,21 @@ const detectAnomalies = async (history) => {
             <View style={styles.anomaliesContainer}>
                 <Text style={styles.sectionHeader}>Anomalies Detected</Text>
                 {anomalies.length > 0 ? (
-                    anomalies.map((anomaly, index) => (
-                        <View key={index} style={styles.anomalyItem}>
-                            <Image
-                                source={moodImages[anomaly.mood] || moodImages.blank}
-                                style={styles.anomalyIcon}
-                            />
-                            <Text style={styles.anomalyText}>
-                                {anomaly.day ? (
-                                    <>
-                                        <Text>On </Text>
-                                        <Text style={styles.redText}>{anomaly.day}</Text>
-                                        <Text>{":\nYour Mood Changed by "}</Text>
-                                        <Text style={styles.redText}>{anomaly.change}%</Text>
-                                    </>
-                                ) : 'No anomalies detected.'}
-                            </Text>
+                    <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
+                        <View style={styles.anomaliesRow}>
+                            {anomalies.map((anomaly, index) => (
+                                <View key={index} style={styles.anomalyItem}>
+                                    <Text style={styles.anomalyText}>{anomaly.day}</Text>
+                                    <Image source={anomaly.emoji} style={styles.moodIcon2} />
+                                    <Text style={styles.redText}>{anomaly.change}%</Text>
+                                </View>
+                            ))}
                         </View>
-                    ))
+                    </ScrollView>
                 ) : (
                     <Text>No anomalies detected.</Text>
                 )}
             </View>
-
 
             {/* Menu Modal */}
             <Modal
@@ -459,10 +416,6 @@ const styles = StyleSheet.create({
     moodHistoryDay: {
         fontSize: 14,
         marginBottom: 5,
-    },
-    moodIcon: {
-        width: 40,
-        height: 40,
     },
     checkinsContainer: {
         marginVertical: 10,
@@ -568,16 +521,33 @@ const styles = StyleSheet.create({
     },
     redText: {
         color: 'red',
+        fontWeight: 'bold', 
+    },
+    anomaliesRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-end',
+        justifyContent: 'center',
     },
     anomalyItem: {
-        flexDirection: 'row',
         alignItems: 'center',
+        marginHorizontal: 10,
+    },
+    moodIcon: {
+        width: 40,
+        height: 40,
+    },
+    moodIcon2: {
+        width: 40,
+        height: 40,
+        marginTop: 5,
+    },
+    anomalyText: {
+        textAlign: 'center',
+        fontSize: 14,
+    },
+    sectionHeader: {
+        fontSize: 20,
+        fontWeight: 'bold',
         marginBottom: 10,
     },
-    anomalyIcon: {
-        width: 30,
-        height: 30,
-        marginRight: 10,
-    },
-    
 });
